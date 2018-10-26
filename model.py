@@ -12,6 +12,13 @@ from tensorflow import keras
 import warnings
 warnings.filterwarnings("ignore")
 
+#~~~~~~~~VARIABLES~~~~~~~~
+NPREDICTORS = 45#len(features)
+NOUTPUTS = 1#len(target)
+NHIDDEN = 20
+NUMITERATIONS = 110000
+BATCHSIZE = 240
+
                     
 #~~~~~~~~Pre-processing~~~~~~~~
 def preprocess():
@@ -155,17 +162,20 @@ def loading(train_store):
     avg = np.mean(train_y)
     rmse = np.sqrt(np.mean((test_y - avg)**2))
     print("Baseline to beat w/ avg -> {}: {}\n".format(avg, rmse))
-    return train_x, train_y, test_x, test_y
+    return train_x, train_y, test_x, test_y, target, features
+
+def getTrainBatch(train_x, train_y, features, target, BATCHSIZE):
+    labels = []
+    arr = np.zeroes([BATCHSIZE, features])
+    for i in range(BATCHSIZE):
+        arr[i] = train_x[i]
+        label[i] = train_y[i]
+    
+
 
 #~~~~~~~~Training~~~~~~~~
-def train(train_x, train_y, test_x, test_y):
+def train(train_x, train_y, test_x, test_y, features, target):
     print("#~~~~~~~~Training~~~~~~~~")
-    #~~~~~~~~VARIABLES~~~~~~~~
-    NPREDICTORS = len(features)
-    NOUTPUTS = len(target)
-    NHIDDEN = 20
-    NUMITERATIONS = 10000
-
     with tf.Session() as sess:
         feature_data = tf.placeholder("float32", [None, NPREDICTORS])
         target_data = tf.placeholder("float32", [None, NOUTPUTS])
@@ -178,73 +188,151 @@ def train(train_x, train_y, test_x, test_y):
             labels = target_data,
             predictions = preds           
         )
-        accuracy = cost/feature_data.shape
+        accuracy = tf.sqrt(cost)
         training_step = tf.train.AdamOptimizer(learning_rate=0.01).minimize(cost)
         init = tf.initialize_all_variables()
         sess.run(init)
 
         saver = tf.train.Saver({'weights' : w1, 'bias' : b1})
-
+        batch_data = train_x[:BATCHSIZE]
+        batch_labels = train_y[:BATCHSIZE]
+        print(batch_data.shape)
+        print(batch_labels.shape) 
+        train_total = len(train_x)
+        idx = np.random.permutation(train_total)
+        train_x,train_y = train_x[idx], train_y[idx]
         for iter in range(0, NUMITERATIONS):
             sess.run(
                 training_step,
                 feed_dict= {
-                    feature_data : train_x,
-                    target_data : train_y.reshape(len(train_x), NOUTPUTS)
+                    feature_data : batch_data,
+                    target_data : batch_labels.reshape(BATCHSIZE, NOUTPUTS)
+                    # feature_data : train_x,
+                    # target_data : train_y.reshape(len(train_x), NOUTPUTS)
                 }
             )
-            if (iter % 10 == 0):
-                cost_value = sess.run(
-                    [cost],
+            if (iter % 500 == 0):
+                cost_value, acc_value = sess.run(
+                    [cost, accuracy],
                     feed_dict= {
-                        feature_data : train_x,
-                        target_data : train_y.reshape(len(train_x), NOUTPUTS)
+                        feature_data : batch_data,
+                        target_data : batch_labels.reshape(BATCHSIZE, NOUTPUTS)
+                        # feature_data : train_x,
+                        # target_data : train_y.reshape(len(train_x), NOUTPUTS)
                     })
                 print("Iteration: ", iter)
                 print("loss", cost_value)
+                print("acc", acc_value)
             
-            if iter % 50 == 0:
-                test(test_x, test_y, n, saver, sess)
+            if iter % 1000 == 0:
+                # test(test_x, test_y, NUMITERATIONS, saver, sess)
+                filename = saver.save(sess, "checkpoints/trained_model.ckpt", global_step=iter)
+                print("Model written to {}".format(filename))
+                print("Test error: {}".format(
+                    np.sqrt(cost.eval(feed_dict= {
+                        feature_data : test_x,
+                        target_data : test_y.reshape(len(test_x), NOUTPUTS)
+                    }))
+                ))
 
-        # filename = saver.save(sess, "./checkpoints", global_step=NUMITERATIONS)
-        # print("Model written to {}".format(filename))
-        # print("Test error: {}".format(
-        #     np.sqrt(cost.eval(feed_dict= {
+        filename = saver.save(sess, "checkpoints/trained_model.ckpt", global_step=NUMITERATIONS)
+        print("Model written to {}".format(filename))
+        print("Test error: {}".format(
+            np.sqrt(cost.eval(feed_dict= {
+                feature_data : test_x,
+                target_data : test_y.reshape(len(test_x), NOUTPUTS)
+            }))
+        ))
+
+def eval(test_x, test_y, features, target):
+    #from train
+    feature_data = tf.placeholder("float32", [None, NPREDICTORS])
+    target_data = tf.placeholder("float32", [None, NOUTPUTS])
+    w1 = tf.Variable(tf.truncated_normal([NPREDICTORS, NOUTPUTS], stddev= 0.0))
+    b1 = tf.Variable(tf.ones([NOUTPUTS]))
+    logits = tf.matmul(feature_data, w1) + b1
+    # preds = tf.nn.relu(logits)
+    preds = logits #linear regression requires no activation
+    cost = tf.losses.mean_squared_error(
+        labels = target_data,
+        predictions = preds           
+    )
+    accuracy = tf.sqrt(cost)
+    training_step = tf.train.AdamOptimizer(learning_rate=0.01).minimize(cost)
+    with tf.Session() as sess:
+        # last_check = tf.train.latest_checkpoint('./checkpoints')
+        # saver = tf.train.import_meta_graph(last_check + ".meta")
+        # saver.restore(sess, last_check)
+        filename = "checkpoints/trained_model.ckpt-110000"
+        saver = tf.train.Saver({'weights' : w1, 'bias' : b1})
+        saver.restore(sess, filename)
+        print("Model restored.")
+        # Check the values of the variables
+        print("w1 : %s" % w1.eval())
+        print("b1 : %s" % b1.eval())
+        # cost_val = sess.run(
+        #     [cost],
+        #     feed_dict={
         #         feature_data : test_x,
         #         target_data : test_y.reshape(len(test_x), NOUTPUTS)
-        #     })) /len(test_x)
-        # ))
-
-def test(test_x, test_y, n, saver, sess):
-    filename = saver.save(sess, "./checkpoints", global_step=n)
-    print("Model written to {}".format(filename))
-    print("Test error: {}".format(
-        np.sqrt(cost.eval(feed_dict= {
-            feature_data : test_x,
-            target_data : test_y.reshape(len(test_x), NOUTPUTS)
-        })) /len(test_x)
-    ))
+        #     }
+        # )
+        print("test error: {}".format(
+            np.sqrt(cost.eval(feed_dict= {
+                feature_data : test_x,
+                target_data : test_y.reshape(len(test_x), NOUTPUTS)
+            }))
+        ))
 
 
 
-# if __name__ == "__main__":
-    # import argparse
+    # sess = tf.InteractiveSession()
+    # last_check = tf.train.latest_checkpoint('./checkpoints')
+    # saver = tf.train.import_meta_graph(last_check + ".meta")
+    # saver.restore(sess, last_check)
+    # graph = tf.get_default_graph()
 
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("mode", choices=["preprocess", "train", "eval"])
+    # loss = graph.get_tensor_by_name('loss:0')
+    # accuracy = graph.get_tensor_by_name('accuracy:0')
+
+    # input_data = graph.get_tensor_by_name('input_data:0')
+    # labels = graph.get_tensor_by_name('labels:0')
+
+    # num_batches = num_samples // BATCH_SIZE
+    # label_list = [[1, 0]] * (num_samples // 2)  # pos always first, neg always second
+    # label_list.extend([[0, 1]] * (num_samples // 2))
+    # assert (len(label_list) == num_samples)
+    # total_acc = 0
+    # for i in range(num_batches):
+    #     sample_index = i * BATCH_SIZE
+    #     batch = test_data[sample_index:sample_index + BATCH_SIZE]
+    #     batch_labels = label_list[sample_index:sample_index + BATCH_SIZE]
+    #     lossV, accuracyV = sess.run([loss, accuracy], {input_data: batch,
+    #                                                    labels: batch_labels})
+    #     total_acc += accuracyV
+    #     print("Accuracy %s, Loss: %s" % (accuracyV, lossV))
+    # print('-' * 40)
+    # print("FINAL ACC:", total_acc / num_batches)
+
     
-    # args = parser.parse_args()
 
-    # if (args.mode == "train"):
-    #     preprocess()
-    #     print("Training Run")
-    #     train()
-    # elif (args.mode == "eval"):
-    #     print("Evaluation run")
-    #     eval("input/test")
-    # else:
-    #     print("Preprocessing")
-    #     preprocess()
+if __name__ == "__main__":
+    import argparse
 
-train_x, train_y, test_x, test_y = loading(preprocess())
-train(train_x, train_y, test_x, test_y)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("mode", choices=["preprocess", "train", "eval"])
+    
+    args = parser.parse_args()
+
+    if (args.mode == "train"):
+        train_x, train_y, test_x, test_y, target, features = loading(preprocess())
+        train(train_x, train_y, test_x, test_y, features, target)
+    elif (args.mode == "eval"):
+        print("Evaluation run")
+        _, _, test_x, test_y, target, features = loading(preprocess())
+        eval(test_x, test_y, features, target)
+    else:
+        print("Usage: python3 model.py train/eval")
+
+# train_x, train_y, test_x, test_y, target, features = loading(preprocess())
+# train(train_x, train_y, test_x, test_y, features, target)
