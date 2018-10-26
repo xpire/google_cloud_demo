@@ -13,7 +13,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 #~~~~~~~~VARIABLES~~~~~~~~
-NPREDICTORS = 45#len(features)
+NPREDICTORS = 29#len(features)
 NOUTPUTS = 1#len(target)
 NHIDDEN = 20
 NUMITERATIONS = 110000
@@ -43,8 +43,8 @@ def preprocess():
     train['WeekofYear'] = train.index.weekofyear
 
     #adding new variable
-    train['SalesPerCustomer'] = train['Sales']/train['Customers']
-    print("Sales per Customer:\n",train['SalesPerCustomer'].describe())
+    # train['SalesPerCustomer'] = train['Sales']/train['Customers']
+    # print("Sales per Customer:\n",train['SalesPerCustomer'].describe())
 
     print("Date parsed correctly?\n", train.index)
 
@@ -85,25 +85,27 @@ def preprocess():
     train_store = train_store.drop(columns = ['Assortment'])
 
     #onehot encoding of holidays
-    train_store['StateHolidayA'] =  (train_store['StateHoliday'] == 'a') 
-    train_store['StateHolidayB'] =  (train_store['StateHoliday'] == 'b') 
-    train_store['StateHolidayC'] =  (train_store['StateHoliday'] == 'c') 
+    # train_store['StateHolidayA'] =  (train_store['StateHoliday'] == 'a') 
+    # train_store['StateHolidayB'] =  (train_store['StateHoliday'] == 'b') 
+    # train_store['StateHolidayC'] =  (train_store['StateHoliday'] == 'c') 
     train_store = train_store.drop(columns = ['StateHoliday'])
+    #from testing, have no effect
 
     #onehot encoding of promoInterval 
-    train_store['promoJan'] = ("Jan" in train_store['PromoInterval']) 
-    train_store['promoFeb'] = ("Feb" in train_store['PromoInterval']) 
-    train_store['promoMar'] = ("Mar" in train_store['PromoInterval']) 
-    train_store['promoApr'] = ("Apr" in train_store['PromoInterval']) 
-    train_store['promoMay'] = ("May" in train_store['PromoInterval']) 
-    train_store['promoJun'] = ("Jun" in train_store['PromoInterval']) 
-    train_store['promoJul'] = ("Jul" in train_store['PromoInterval']) 
-    train_store['promoAug'] = ("Aug" in train_store['PromoInterval']) 
-    train_store['promoSep'] = ("Sep" in train_store['PromoInterval']) 
-    train_store['promoOct'] = ("Oct" in train_store['PromoInterval']) 
-    train_store['promoNov'] = ("Nov" in train_store['PromoInterval']) 
-    train_store['promoDec'] = ("Dec" in train_store['PromoInterval']) 
+    # train_store['promoJan'] = ("Jan" in train_store['PromoInterval']) 
+    # train_store['promoFeb'] = ("Feb" in train_store['PromoInterval']) 
+    # train_store['promoMar'] = ("Mar" in train_store['PromoInterval']) 
+    # train_store['promoApr'] = ("Apr" in train_store['PromoInterval']) 
+    # train_store['promoMay'] = ("May" in train_store['PromoInterval']) 
+    # train_store['promoJun'] = ("Jun" in train_store['PromoInterval']) 
+    # train_store['promoJul'] = ("Jul" in train_store['PromoInterval']) 
+    # train_store['promoAug'] = ("Aug" in train_store['PromoInterval']) 
+    # train_store['promoSep'] = ("Sep" in train_store['PromoInterval']) 
+    # train_store['promoOct'] = ("Oct" in train_store['PromoInterval']) 
+    # train_store['promoNov'] = ("Nov" in train_store['PromoInterval']) 
+    # train_store['promoDec'] = ("Dec" in train_store['PromoInterval']) 
     train_store = train_store.drop(columns = ['PromoInterval'])
+    #from testing, have no effect
 
     #onehot encoding of DayOfWeek
     train_store['DayMon'] = (1 == train_store["DayOfWeek"]) 
@@ -128,12 +130,14 @@ def loading(train_store):
     print(train_store.dtypes)
     target = ['Sales']
     features = ['Store', #'Sales', 
-    'Customers', 'Open', 'Promo', 'SchoolHoliday', 'Year', 'Month', 'Day', 'WeekofYear', #OG
-    'SalesPerCustomer', 'CompetitionDistance', 'CompetitionOpenSinceMonth', 'CompetitionOpenSinceYear', 'Promo2', 'Promo2SinceWeek', 'Promo2SinceYear', #floats except Promo2
+    #'Customers', 
+    'Open', 'Promo', 'SchoolHoliday', 'Year', 'Month', 'Day', 'WeekofYear', #OG
+    #'SalesPerCustomer', 
+    'CompetitionDistance', 'CompetitionOpenSinceMonth', 'CompetitionOpenSinceYear', 'Promo2', 'Promo2SinceWeek', 'Promo2SinceYear', #floats except Promo2
     'StoreTypeA', 'StoreTypeB', 'StoreTypeC', 'StoreTypeD', 
     'AssortA', 'AssortB', 'AssortC', 
-    'StateHolidayA', 'StateHolidayB', 'StateHolidayC',
-    'promoJan', 'promoFeb', 'promoMar', 'promoApr', 'promoMay', 'promoJun', 'promoJul', 'promoAug', 'promoSep', 'promoOct', 'promoNov', 'promoDec',
+    #'StateHolidayA', 'StateHolidayB', 'StateHolidayC',
+    #'promoJan', 'promoFeb', 'promoMar', 'promoApr', 'promoMay', 'promoJun', 'promoJul', 'promoAug', 'promoSep', 'promoOct', 'promoNov', 'promoDec',
     'DayMon', 'DayTue', 'DayWed', 'DayThu', 'DayFri', 'DaySat', 'DaySun'] #Booleans
     features_dict = {features[i] : i for i in range(len(features))}
     print(features_dict)
