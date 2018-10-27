@@ -13,11 +13,11 @@ import warnings
 warnings.filterwarnings("ignore")
 
 #~~~~~~~~VARIABLES~~~~~~~~
-NPREDICTORS = 29#len(features)
+NPREDICTORS = 28#len(features)
 NOUTPUTS = 1#len(target)
 NHIDDEN = 20
-NUMITERATIONS = 110000
-BATCHSIZE = 240
+NUMITERATIONS = 400000
+BATCHSIZE = 120
 
                     
 #~~~~~~~~Pre-processing~~~~~~~~
@@ -106,6 +106,9 @@ def preprocess():
     # train_store['promoDec'] = ("Dec" in train_store['PromoInterval']) 
     train_store = train_store.drop(columns = ['PromoInterval'])
     #from testing, have no effect
+
+    #removed outside information unavailable
+    train_store = train_store.drop(columns = ['Customers'])
 
     #onehot encoding of DayOfWeek
     train_store['DayMon'] = (1 == train_store["DayOfWeek"]) 
@@ -197,7 +200,7 @@ def train(train_x, train_y, test_x, test_y, features, target):
         init = tf.initialize_all_variables()
         sess.run(init)
 
-        saver = tf.train.Saver({'weights' : w1, 'bias' : b1})
+        saver = tf.train.Saver({'weights' : w1, 'bias' : b1}, max_to_keep=None)
         batch_data = train_x[:BATCHSIZE]
         batch_labels = train_y[:BATCHSIZE]
         print(batch_data.shape)
@@ -205,6 +208,9 @@ def train(train_x, train_y, test_x, test_y, features, target):
         train_total = len(train_x)
         idx = np.random.permutation(train_total)
         train_x,train_y = train_x[idx], train_y[idx]
+
+        current_lowest_test_error = 100000
+
         for iter in range(0, NUMITERATIONS):
             sess.run(
                 training_step,
@@ -215,7 +221,7 @@ def train(train_x, train_y, test_x, test_y, features, target):
                     # target_data : train_y.reshape(len(train_x), NOUTPUTS)
                 }
             )
-            if (iter % 500 == 0):
+            if (iter % 5000 == 0):
                 cost_value, acc_value = sess.run(
                     [cost, accuracy],
                     feed_dict= {
@@ -228,16 +234,22 @@ def train(train_x, train_y, test_x, test_y, features, target):
                 print("loss", cost_value)
                 print("acc", acc_value)
             
-            if iter % 1000 == 0:
+            if iter % 10000 == 0:
                 # test(test_x, test_y, NUMITERATIONS, saver, sess)
                 filename = saver.save(sess, "checkpoints/trained_model.ckpt", global_step=iter)
                 print("Model written to {}".format(filename))
-                print("Test error: {}".format(
-                    np.sqrt(cost.eval(feed_dict= {
+                test_error = np.sqrt(cost.eval(feed_dict= {
                         feature_data : test_x,
                         target_data : test_y.reshape(len(test_x), NOUTPUTS)
-                    }))
-                ))
+                }))
+                print("Test error: {}".format(test_error))
+
+                if test_error < current_lowest_test_error:
+                    current_lowest_test_error = test_error
+                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~best test error yet: {}".format(current_lowest_test_error))
+                    
+
+
 
         filename = saver.save(sess, "checkpoints/trained_model.ckpt", global_step=NUMITERATIONS)
         print("Model written to {}".format(filename))
@@ -247,6 +259,20 @@ def train(train_x, train_y, test_x, test_y, features, target):
                 target_data : test_y.reshape(len(test_x), NOUTPUTS)
             }))
         ))
+'''
+features = ['Store', #'Sales', 
+    #'Customers', 
+    'Open', 'Promo', 'SchoolHoliday', 'Year', 'Month', 'Day', 'WeekofYear', #OG
+    #'SalesPerCustomer', 
+    'CompetitionDistance', 'CompetitionOpenSinceMonth', 'CompetitionOpenSinceYear', 'Promo2', 'Promo2SinceWeek', 'Promo2SinceYear', #floats except Promo2
+    'StoreTypeA', 'StoreTypeB', 'StoreTypeC', 'StoreTypeD', 
+    'AssortA', 'AssortB', 'AssortC', 
+    #'StateHolidayA', 'StateHolidayB', 'StateHolidayC',
+    #'promoJan', 'promoFeb', 'promoMar', 'promoApr', 'promoMay', 'promoJun', 'promoJul', 'promoAug', 'promoSep', 'promoOct', 'promoNov', 'promoDec',
+    'DayMon', 'DayTue', 'DayWed', 'DayThu', 'DayFri', 'DaySat', 'DaySun'] #Booleans
+'''
+# def prediction(store, open, promo, date):
+    
 
 def eval(test_x, test_y, features, target):
     #from train
@@ -335,8 +361,7 @@ if __name__ == "__main__":
         print("Evaluation run")
         _, _, test_x, test_y, target, features = loading(preprocess())
         eval(test_x, test_y, features, target)
-    else:
-        print("Usage: python3 model.py train/eval")
+
 
 # train_x, train_y, test_x, test_y, target, features = loading(preprocess())
 # train(train_x, train_y, test_x, test_y, features, target)
