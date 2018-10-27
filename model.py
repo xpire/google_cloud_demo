@@ -8,6 +8,7 @@ import seaborn as sns
 # %matplotlib inline
 import tensorflow as tf
 from tensorflow import keras
+import shutil, os
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -16,9 +17,9 @@ warnings.filterwarnings("ignore")
 NPREDICTORS = 28#len(features)
 NOUTPUTS = 1#len(target)
 NHIDDEN = 20
-NUMITERATIONS = 400000
-BATCHSIZE = 120
-
+NUMITERATIONS = 500000
+BATCHSIZE = 50
+HYPERPARAMETERTUNING = 10
                     
 #~~~~~~~~Pre-processing~~~~~~~~
 def preprocess():
@@ -210,6 +211,10 @@ def train(train_x, train_y, test_x, test_y, features, target):
         train_x,train_y = train_x[idx], train_y[idx]
 
         current_lowest_test_error = 100000
+        current_lowest_train_error = 100000
+        iter_lowest_test_error = 0
+        current_filename = ""
+        allowed_failures = 3
 
         for iter in range(0, NUMITERATIONS):
             sess.run(
@@ -246,7 +251,22 @@ def train(train_x, train_y, test_x, test_y, features, target):
 
                 if test_error < current_lowest_test_error:
                     current_lowest_test_error = test_error
-                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~best test error yet: {}".format(current_lowest_test_error))
+                    iter_lowest_test_error = iter
+                    current_lowest_train_error = acc_value
+                    current_filename = filename
+                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~best test error yet: {} from {}".format(current_lowest_test_error, iter_lowest_test_error))
+                else:
+                    allowed_failures-=1
+                    if allowed_failures == 0:
+                        #save this model and restart
+                        directory = "model_candidates/t" + str(int(current_lowest_test_error)) + "(" + str(int(acc_value)) + ")"
+                        if not os.path.exists(directory + "/"):
+                            os.mkdir(directory + "/")
+                        shutil.copy(filename + '.index', directory)
+                        shutil.copy(filename + '.meta', directory)
+                        shutil.copy(filename + '.data-00000-of-00001', directory)
+                        print("saved in {}".format(directory))
+                        break
                     
 
 
@@ -293,13 +313,48 @@ def eval(test_x, test_y, features, target):
         # last_check = tf.train.latest_checkpoint('./checkpoints')
         # saver = tf.train.import_meta_graph(last_check + ".meta")
         # saver.restore(sess, last_check)
-        filename = "checkpoints/trained_model.ckpt-110000"
+        # filename = "checkpoints/trained_model.ckpt-110000"
+        filename = "model_candidates/t2883(2393)/trained_model.ckpt-270000"
         saver = tf.train.Saver({'weights' : w1, 'bias' : b1})
         saver.restore(sess, filename)
         print("Model restored.")
         # Check the values of the variables
         print("w1 : %s" % w1.eval())
         print("b1 : %s" % b1.eval())
+        """
+        output:
+        Model restored.
+        w1 : [[-3.0153331e-01]
+        [ 3.1417143e+01]
+        [ 2.4768223e+03]
+        [ 6.3471960e+02]
+        [ 4.0008183e+00]
+        [-1.3948508e+02]
+        [ 3.8556293e+01]
+        [ 2.1763359e+01]
+        [-5.6020424e-02]
+        [-6.5704239e+01]
+        [ 4.6448222e-01]
+        [-8.4330711e+01]
+        [ 9.0178704e-01]
+        [-2.9978019e-01]
+        [-2.6656587e+03]
+        [ 2.6947957e+03]
+        [-2.3623589e+03]
+        [-2.1456587e+03]
+        [-2.2471423e+02]
+        [ 0.0000000e+00]
+        [ 2.8142548e+02]
+        [ 5.2933624e+02]
+        [ 2.2284938e+02]
+        [-1.9887314e+01]
+        [-8.3266464e+01]
+        [-2.6087637e+02]
+        [ 9.8838824e+02]
+        [-1.0463618e+03]]
+        b1 : [32.417385]
+        test error: 2866.5537109375
+        """
         # cost_val = sess.run(
         #     [cost],
         #     feed_dict={
@@ -355,8 +410,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if (args.mode == "train"):
-        train_x, train_y, test_x, test_y, target, features = loading(preprocess())
-        train(train_x, train_y, test_x, test_y, features, target)
+        for i in range(HYPERPARAMETERTUNING):
+            train_x, train_y, test_x, test_y, target, features = loading(preprocess())
+            train(train_x, train_y, test_x, test_y, features, target)
     elif (args.mode == "eval"):
         print("Evaluation run")
         _, _, test_x, test_y, target, features = loading(preprocess())
