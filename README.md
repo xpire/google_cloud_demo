@@ -21,6 +21,7 @@ To be implemented:
     - turn model into a package such that it can be trained/deployed on cloudML
 		* requires an estimator, train_spec and eval_spec (check docs)
 	- consider distributed training?
+	- note, remember the serving data skew, match the conditions of training as close to the serving scenario.
 	
 Ideas to look at:
 
