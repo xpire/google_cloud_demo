@@ -27,3 +27,16 @@ Ideas to look at:
 
 * BigTable to store data:
     - if the data ingest has a high throughput or we require real-time analysis with low latency, this could be a good option to store data in before passing it into cloudML
+	
+	
+##TIMELINE##
+
+1. turn tf model into an estimator so that it can be put on cloudML
+2. pub/sub program to publish to dataflow
+3. dataflow pipeline that can:
+    - read from pub/sub
+	- do some preprocessing to the data
+	- provide dashboard stats
+	- push the data to model and bigquery for storage (if we were streaming, we would want to store the data that was processed)
+4. consider cloudML distributed training by providing command line arguments for hyperparameters
+5. consider datalab for dashboard
