@@ -14,6 +14,9 @@ To be implemented:
     - apache beam pipeline to pass data from Pub/Sub into the model, for training/evaluation
 	- apply preprocessing to the data, such that when we move to serving, this pipeline can be used for **streaming** data
 	
+* BigQuery:
+    - to store the data in, a good choice for large petabyte datasets
+	
 * CloudML:
     - turn model into a package such that it can be trained/deployed on cloudML
 		* requires an estimator, train_spec and eval_spec (check docs)
