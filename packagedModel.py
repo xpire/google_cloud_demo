@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import pandas as pd
+import datetime
 
 
 # ~~~~ CONSTANTS ~~~~
@@ -31,7 +32,7 @@ def preprocess(data, store):
     store['CompetitionDistance'].fillna(store['CompetitionDistance'].median(), inplace = True)
     store.fillna(0,inplace = True)
     # Merging the two datasets together
-    data_store = pd.merge(train, store, how = 'inner', on = 'Store')
+    data_store = pd.merge(data, store, how = 'inner', on = 'Store')
     # One Hot Encoding of Store Type
     data_store['StoreTypeA'] = (data_store['StoreType'] == 'a')
     data_store['StoreTypeB'] =  (data_store['StoreType'] == 'b') 
@@ -52,11 +53,39 @@ def preprocess(data, store):
     data_store['DaySat'] = (6 == data_store["DayOfWeek"]) 
     data_store['DaySun'] = (7 == data_store["DayOfWeek"]) 
     data_store = data_store.drop(columns = ['DayOfWeek'])
-    # Removal of information with no effect
+    # One Hot Encoding of Month of Year
+    data_store['Jan'] = ("Jan" in data_store['Month']) 
+    data_store['Feb'] = ("Feb" in data_store['Month']) 
+    data_store['Mar'] = ("Mar" in data_store['Month']) 
+    data_store['Apr'] = ("Apr" in data_store['Month']) 
+    data_store['May'] = ("May" in data_store['Month']) 
+    data_store['Jun'] = ("Jun" in data_store['Month']) 
+    data_store['Jul'] = ("Jul" in data_store['Month']) 
+    data_store['Aug'] = ("Aug" in data_store['Month']) 
+    data_store['Sep'] = ("Sep" in data_store['Month']) 
+    data_store['Oct'] = ("Oct" in data_store['Month']) 
+    data_store['Nov'] = ("Nov" in data_store['Month']) 
+    data_store['Dec'] = ("Dec" in data_store['Month']) 
+    data_store = data_store.drop(columns = ['Month'])
+        # One Hot Encoding of State Holiday Statistic
+    data_store['StateHolidayA'] =  (data_store['StateHoliday'] == 'a') 
+    data_store['StateHolidayB'] =  (data_store['StateHoliday'] == 'b') 
+    data_store['StateHolidayC'] =  (data_store['StateHoliday'] == 'c') 
     data_store = data_store.drop(columns = ['StateHoliday'])
+    # One Hot Encoding of Year
+    for i in range(2013, datetime.datetime.now().year+1):
+        data_store[str(i)] = (i in data_store['Year'])
+    data_store = data_store.drop(columns = ['Year'])
+    # Removal of information with no effect
+    data_store = data_store.drop(columns = ['Day'])
     data_store = data_store.drop(columns = ['PromoInterval'])
     data_store = data_store.drop(columns = ['Customers'])
     data_store = data_store.drop(columns=['Store'])
+    data_store = data_store.drop(columns=['CompetitionOpenSinceMonth'])
+    data_store = data_store.drop(columns=['CompetitionOpenSinceYear'])
+    data_store = data_store.drop(columns=['Promo2SinceWeek'])
+    data_store = data_store.drop(columns=['Promo2SinceYear'])
+    print(list(data_store))
     return data_store
 
 
@@ -78,20 +107,23 @@ def input_evaluation_set():
     label = data_store['Sales'].values
     data_store = data_store.drop(columns = ['Sales'])
     # Convert to a tensorflow Dataset
-    # unavailable_features = ['Store', 'Sales', 'Customers', 'PromoInterval', 'StateHoliday', 'DayOfWeek', 'Assortment', 'StoreType']
-    # integer_features = []
-    # features = ['Open', 'Promo', 'SchoolHoliday', 'Year', 'Month', 'Day', 'WeekofYear', #OG
-    # 'CompetitionDistance', 'CompetitionOpenSinceMonth', 'CompetitionOpenSinceYear', 'Promo2', 'Promo2SinceWeek', 'Promo2SinceYear', #floats except Promo2
-    # 'StoreTypeA', 'StoreTypeB', 'StoreTypeC', 'StoreTypeD', 
-    # 'AssortA', 'AssortB', 'AssortC', 
-    # #'StateHolidayA', 'StateHolidayB', 'StateHolidayC',
-    # #'promoJan', 'promoFeb', 'promoMar', 'promoApr', 'promoMay', 'promoJun', 'promoJul', 'promoAug', 'promoSep', 'promoOct', 'promoNov', 'promoDec',
-    # 'DayMon', 'DayTue', 'DayWed', 'DayThu', 'DayFri', 'DaySat', 'DaySun'] #Booleans
+    unavailable_features = ['Store', 'Customers', 'PromoInterval', 'StateHoliday', 'DayOfWeek', 'Assortment', \
+                            'StoreType','CompetitionOpenSinceMonth', 'CompetitionOpenSinceYear', 'Day', 'Month', 'Year']
+    label = ['Sales']
+    integer_features = ['CompetitionDistance']
+    boolean_features = ['Open', 'Promo','SchoolHoliday','WeekofYear', 'Promo2', \
+                        'StoreTypeA', 'StoreTypeB', 'StoreTypeC', 'StoreTypeD', \
+                        'AssortA', 'AssortB', 'AssortC', \
+                        'DayMon', 'DayTue', 'DayWed', 'DayThu', 'DayFri', 'DaySat', 'DaySun', \
+                        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', \
+                        'StateHolidayA', 'StateHolidayB', 'StateHolidayC'] + list(range(2013, datetime.datetime.now().year+1))
     # data_set = tf.data.Dataset.from_tensor_slices(
-    #     (tf.cast(data_store.values, tf.float))
+    #     (tf.cast(data_store[integer].values, tf.float))
     # )
 
-
+if __name__ == "__main__":
+    train, store = input_data(train_file, store_file)
+    preprocess(train, store)
 """
 Old model.py code:
 #credits: https://www.kaggle.com/elenapetrova/time-series-analysis-and-forecasts-with-prophet
