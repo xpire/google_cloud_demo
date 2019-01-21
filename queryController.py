@@ -64,7 +64,7 @@ def model(storeName, storeOpen, promo, date):
         input[1] = storeOpen
         input[2] = promo
         # parse dates
-        df = pd.DataFrame
+        df = pd.DataFrame()
         df['Date'] = pd.date_range(start=date, end=date)
         cal = calender()
         holidays = cal.holidays(start=date, end=date)

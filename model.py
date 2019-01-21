@@ -14,11 +14,11 @@ import warnings
 warnings.filterwarnings("ignore")
 
 #~~~~~~~~VARIABLES~~~~~~~~
-NPREDICTORS = 28#len(features)
+NPREDICTORS = 27#len(features)
 NOUTPUTS = 1#len(target)
 NHIDDEN = 20
 NUMITERATIONS = 500000
-BATCHSIZE = 50
+BATCHSIZE = 1000
 HYPERPARAMETERTUNING = 10
                     
 #~~~~~~~~Pre-processing~~~~~~~~
@@ -120,6 +120,10 @@ def preprocess():
     train_store['DaySat'] = (6 == train_store["DayOfWeek"]) 
     train_store['DaySun'] = (7 == train_store["DayOfWeek"]) 
     train_store = train_store.drop(columns = ['DayOfWeek'])
+
+    # print(train['Store'].unique())
+    train_store = train_store.drop(columns=['Store'])
+
     return train_store
     # print("Final: \n{}".format(train_store.head().to_string()))
     # train_store.to_csv(output_file, index = True)
@@ -133,7 +137,7 @@ def loading(train_store):
     #convert pandas dataframe to tensor
     print(train_store.dtypes)
     target = ['Sales']
-    features = ['Store', #'Sales', 
+    features = [#'Store', #'Sales', 
     #'Customers', 
     'Open', 'Promo', 'SchoolHoliday', 'Year', 'Month', 'Day', 'WeekofYear', #OG
     #'SalesPerCustomer', 
@@ -355,49 +359,12 @@ def eval(test_x, test_y, features, target):
         b1 : [32.417385]
         test error: 2866.5537109375
         """
-        # cost_val = sess.run(
-        #     [cost],
-        #     feed_dict={
-        #         feature_data : test_x,
-        #         target_data : test_y.reshape(len(test_x), NOUTPUTS)
-        #     }
-        # )
         print("test error: {}".format(
             np.sqrt(cost.eval(feed_dict= {
                 feature_data : test_x,
                 target_data : test_y.reshape(len(test_x), NOUTPUTS)
             }))
         ))
-
-
-
-    # sess = tf.InteractiveSession()
-    # last_check = tf.train.latest_checkpoint('./checkpoints')
-    # saver = tf.train.import_meta_graph(last_check + ".meta")
-    # saver.restore(sess, last_check)
-    # graph = tf.get_default_graph()
-
-    # loss = graph.get_tensor_by_name('loss:0')
-    # accuracy = graph.get_tensor_by_name('accuracy:0')
-
-    # input_data = graph.get_tensor_by_name('input_data:0')
-    # labels = graph.get_tensor_by_name('labels:0')
-
-    # num_batches = num_samples // BATCH_SIZE
-    # label_list = [[1, 0]] * (num_samples // 2)  # pos always first, neg always second
-    # label_list.extend([[0, 1]] * (num_samples // 2))
-    # assert (len(label_list) == num_samples)
-    # total_acc = 0
-    # for i in range(num_batches):
-    #     sample_index = i * BATCH_SIZE
-    #     batch = test_data[sample_index:sample_index + BATCH_SIZE]
-    #     batch_labels = label_list[sample_index:sample_index + BATCH_SIZE]
-    #     lossV, accuracyV = sess.run([loss, accuracy], {input_data: batch,
-    #                                                    labels: batch_labels})
-    #     total_acc += accuracyV
-    #     print("Accuracy %s, Loss: %s" % (accuracyV, lossV))
-    # print('-' * 40)
-    # print("FINAL ACC:", total_acc / num_batches)
 
     
 
@@ -417,6 +384,8 @@ if __name__ == "__main__":
         print("Evaluation run")
         _, _, test_x, test_y, target, features = loading(preprocess())
         eval(test_x, test_y, features, target)
+    elif (args.mode == "preprocess"):
+        loading(preprocess())
 
 
 # train_x, train_y, test_x, test_y, target, features = loading(preprocess())

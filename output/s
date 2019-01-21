@@ -1,0 +1,107 @@
+General shape:(1017209, 8)
+              Store     DayOfWeek         Sales     Customers          Open         Promo  SchoolHoliday
+count  1.017209e+06  1.017209e+06  1.017209e+06  1.017209e+06  1.017209e+06  1.017209e+06   1.017209e+06
+mean   5.584297e+02  3.998341e+00  5.773819e+03  6.331459e+02  8.301067e-01  3.815145e-01   1.786467e-01
+std    3.219087e+02  1.997391e+00  3.849926e+03  4.644117e+02  3.755392e-01  4.857586e-01   3.830564e-01
+min    1.000000e+00  1.000000e+00  0.000000e+00  0.000000e+00  0.000000e+00  0.000000e+00   0.000000e+00
+25%    2.800000e+02  2.000000e+00  3.727000e+03  4.050000e+02  1.000000e+00  0.000000e+00   0.000000e+00
+50%    5.580000e+02  4.000000e+00  5.744000e+03  6.090000e+02  1.000000e+00  0.000000e+00   0.000000e+00
+75%    8.380000e+02  6.000000e+00  7.856000e+03  8.370000e+02  1.000000e+00  1.000000e+00   0.000000e+00
+max    1.115000e+03  7.000000e+00  4.155100e+04  7.388000e+03  1.000000e+00  1.000000e+00   1.000000e+00
+
+Sales
+count:  1,017,209
+mean:       5,773.819
+std:        3,849.926
+min:            0
+q1:         3,727
+q2:         5,773
+q3:         7,856
+max:       41,551
+
+Store                          int64 5.1025085e-02
+'''
+Customers                      int64 7.8807163e+00
+'''
+Open                           int64 -7.0512023e+00
+Promo                          int64 3.6308008e+02
+SchoolHoliday                  int64 9.2220055e+01
+Year                           int64 -3.1796026e+00
+Month                          int64 -2.2330599e+00
+Day                            int64 6.0837717e+00
+WeekofYear                     int64 5.6998725e+00
+'''
+SalesPerCustomer             float64 6.4755115e+02
+'''
+CompetitionDistance          float64 1.1565006e-02
+CompetitionOpenSinceMonth    float64-1.7726530e+01
+CompetitionOpenSinceYear     float64 5.5455714e-02
+Promo2                         int64 1.1384347e+01
+Promo2SinceWeek              float64 2.6853211e+00
+Promo2SinceYear              float64 -8.2205556e-02
+StoreTypeA                      bool 7.9321173e+02
+StoreTypeB                      bool -1.0781831e+03
+StoreTypeC                      bool 7.4686615e+02
+StoreTypeD                      bool 4.9374139e+02
+AssortA                         bool 1.6602869e+02
+AssortB                         bool -1.5863112e+02
+AssortC                         bool 1.2719059e+02
+StateHolidayA                   bool 0
+StateHolidayB                   bool 0
+StateHolidayC                   bool 0
+promoJan                        bool 0
+promoFeb                        bool 0
+promoMar                        bool 0
+promoApr                        bool 0
+promoMay                        bool 0
+promoJun                        bool 0
+promoJul                        bool 0
+promoAug                        bool 0
+promoSep                        bool 0
+promoOct                        bool 0
+promoNov                        bool 0
+promoDec                        bool 0
+DayMon                          bool 2.0940234e+02
+DayTue                          bool -1.9191638e+02
+DayWed                          bool -1.1161147e+02
+DayThu                          bool -2.4687396e+02
+DayFri                          bool 3.5159599e+01
+DaySat                          bool 2.7245558e+01
+DaySun                          bool 0 
+
+
+ 
+ 
+ 
+
+
+ 
+ 
+
+  
+
+ 
+
+
+ 
+
+
+
+
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+  0.0000000e+00
+ 
+b1 : -6.05123
