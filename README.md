@@ -1,45 +1,42 @@
-**Edit a file, create a new file, and clone from Bitbucket in under 2 minutes**
+##Cloud BD Solutions Demo Readme##
 
-When you're done, you can delete the content in this README and update the file with details for others getting started with your repository.
+What is done:
 
-*We recommend that you open this README in another tab as you perform the tasks below. You can [watch our video](https://youtu.be/0ocf7u76WSo) for a full demo of all the steps in this tutorial. Open the video in a new tab to avoid leaving Bitbucket.*
+* a linear regression model which predicts price based on store id and date
+* wrap model in an API call for use in package
 
----
+To be implemented:
 
-## Edit a file
+* PUB/SUB: 
+    - required for ingest of data (initially batch historical data stored in BigQuery or a bucket, and published to the one topic with timestamp as the one given within the data)
+	
+* Dataflow:
+    - apache beam pipeline to pass data from Pub/Sub into the model, for training/evaluation
+	- apply preprocessing to the data, such that when we move to serving, this pipeline can be used for **streaming** data
+	
+* BigQuery:
+    - to store the data in, a good choice for large petabyte datasets
+	
+* CloudML:
+    - turn model into a package such that it can be trained/deployed on cloudML
+		* requires an estimator, train_spec and eval_spec (check docs)
+	- consider distributed training?
+	- note, remember the serving data skew, match the conditions of training as close to the serving scenario.
+	
+Ideas to look at:
 
-You’ll start by editing this README file to learn how to edit a file in Bitbucket.
+* BigTable to store data:
+    - if the data ingest has a high throughput or we require real-time analysis with low latency, this could be a good option to store data in before passing it into cloudML
+	
+	
+##TIMELINE##
 
-1. Click **Source** on the left side.
-2. Click the README.md link from the list of files.
-3. Click the **Edit** button.
-4. Delete the following text: *Delete this line to make a change to the README from Bitbucket.*
-5. After making your change, click **Commit** and then **Commit** again in the dialog. The commit page will open and you’ll see the change you just made.
-6. Go back to the **Source** page.
-
----
-
-## Create a file
-
-Next, you’ll add a new file to this repository.
-
-1. Click the **New file** button at the top of the **Source** page.
-2. Give the file a filename of **contributors.txt**.
-3. Enter your name in the empty file space.
-4. Click **Commit** and then **Commit** again in the dialog.
-5. Go back to the **Source** page.
-
-Before you move on, go ahead and explore the repository. You've already seen the **Source** page, but check out the **Commits**, **Branches**, and **Settings** pages.
-
----
-
-## Clone a repository
-
-Use these steps to clone from SourceTree, our client for using the repository command-line free. Cloning allows you to work on your files locally. If you don't yet have SourceTree, [download and install first](https://www.sourcetreeapp.com/). If you prefer to clone from the command line, see [Clone a repository](https://confluence.atlassian.com/x/4whODQ).
-
-1. You’ll see the clone button under the **Source** heading. Click that button.
-2. Now click **Check out in SourceTree**. You may need to create a SourceTree account or log in.
-3. When you see the **Clone New** dialog in SourceTree, update the destination path and name if you’d like to and then click **Clone**.
-4. Open the directory you just created to see your repository’s files.
-
-Now that you're more familiar with your Bitbucket repository, go ahead and add a new file locally. You can [push your change back to Bitbucket with SourceTree](https://confluence.atlassian.com/x/iqyBMg), or you can [add, commit,](https://confluence.atlassian.com/x/8QhODQ) and [push from the command line](https://confluence.atlassian.com/x/NQ0zDQ).
+1. turn tf model into an estimator so that it can be put on cloudML
+2. pub/sub program to publish to dataflow
+3. dataflow pipeline that can:
+    - read from pub/sub
+	- do some preprocessing to the data
+	- provide dashboard stats
+	- push the data to model and bigquery for storage (if we were streaming, we would want to store the data that was processed)
+4. consider cloudML distributed training by providing command line arguments for hyperparameters
+5. consider datalab for dashboard
