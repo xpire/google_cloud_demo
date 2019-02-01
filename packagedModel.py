@@ -1,3 +1,19 @@
+# Justin Or, Jan 2019
+
+# Packaged Estimator Model for use on Google CloudML
+# Contains all the model logic of the package.
+
+# Constants will go in the __init__.py file
+
+# Preprocessing will be made into a dataflow apache beam pipeline
+
+# Defines the input function and the feature column functions 
+# which will be called within the estimator to build the model.
+# The input function takes in data from tf.Dataset and encorporates
+# the shuffling and subsetting of data.
+# The feature column function builds the feature columns based on
+# their type (boolean, integer, float, etc) 
+
 import tensorflow as tf
 import numpy as np
 import pandas as pd
@@ -168,7 +184,14 @@ def input_evaluation_set(stage):
 
 def build_model_columns():
     # Builds set of feature columns
-    pass
+    features = []
+    # integer numerical columns
+    for col in integer_features:
+        features.append(tf.feature_column.numeric_column(key=col))
+    # boolean categorical columns
+    for col in boolean_features:
+        features.append(tf.feature_column.categorical_column_with_identity(key=col, num_buckets=2)) # [0, 1]
+    return features
 
 if __name__ == "__main__":
     # train, store = input_data(train_file, store_file)
