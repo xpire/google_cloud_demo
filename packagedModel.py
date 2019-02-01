@@ -14,42 +14,14 @@
 # The feature column function builds the feature columns based on
 # their type (boolean, integer, float, etc) 
 
+# Usage: python -m demo.packagedModel (from outside this directory)
+# It is not a python program, and init holds all the global variables, 
+# so program will fail when called as: python packagedModel.py
+from . import * 
 import tensorflow as tf
 import numpy as np
 import pandas as pd
 import datetime
-
-
-# ~~~~ CONSTANTS ~~~~
-NPREDICTORS = 27 #len(features)
-NOUTPUTS = 1 #len(target)
-NHIDDEN = 20
-NUMITERATIONS = 500000
-BATCHSIZE = 1000
-HYPERPARAMETERTUNING = 10
-
-train_file = 'input/train.csv'
-test_file = 'input/test.csv'
-store_file = 'input/store.csv'
-output_file = 'output/new_rossmann_prediction.csv'
-output_train = 'output/trainPartitioned.csv'
-output_test = 'output/testPartitioned.csv'
-
-unavailable_features = ['Store', 'Customers', 'PromoInterval', 'StateHoliday', 'DayOfWeek', 'Assortment', \
-                        'StoreType','CompetitionOpenSinceMonth', 'CompetitionOpenSinceYear', 'Day', 'Month', 'Year']
-label = ['Sales']
-integer_features = ['CompetitionDistance', 'Year']
-boolean_features = ['Open', 'Promo','SchoolHoliday','WeekofYear', 'Promo2', \
-                    'StoreTypeA', 'StoreTypeB', 'StoreTypeC', 'StoreTypeD', \
-                    'AssortA', 'AssortB', 'AssortC', \
-                    'DayMon', 'DayTue', 'DayWed', 'DayThu', 'DayFri', 'DaySat', 'DaySun', \
-                    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', \
-                    'StateHolidayA', 'StateHolidayB', 'StateHolidayC'] #"Year" #+ list(range(2013, datetime.datetime.now().year+1))
-
-COLUMNS = integer_features + boolean_features + label
-FIELD_DEFAULTS = len(integer_features) * [[0]] + len(boolean_features) * [[0]] + len(label) * [[0.0]]
-
-
 # ~~~~ PREPROCESS HELPER FUNCTIONS ~~~~
 
 def preprocess(data, store):
@@ -196,7 +168,14 @@ def build_model_columns():
 if __name__ == "__main__":
     # train, store = input_data(train_file, store_file)
     # preprocess(train, store)
+    print(train_file)
     dataset = input_evaluation_set(2)
+    features = build_model_columns()
+    classifier = tf.estimator.DNNRegressor(
+        feature_columns=features,
+        hidden_units=[10, 10]
+    )
+
 """
 Old model.py code:
 #credits: https://www.kaggle.com/elenapetrova/time-series-analysis-and-forecasts-with-prophet
