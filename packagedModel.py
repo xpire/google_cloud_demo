@@ -14,42 +14,14 @@
 # The feature column function builds the feature columns based on
 # their type (boolean, integer, float, etc) 
 
+# Usage: python -m demo.task (from outside this directory)
+# It is not a python program, and init holds all the global variables, 
+# so program will fail when called as: python packagedModel.py
+from . import * 
 import tensorflow as tf
 import numpy as np
 import pandas as pd
 import datetime
-
-
-# ~~~~ CONSTANTS ~~~~
-NPREDICTORS = 27 #len(features)
-NOUTPUTS = 1 #len(target)
-NHIDDEN = 20
-NUMITERATIONS = 500000
-BATCHSIZE = 1000
-HYPERPARAMETERTUNING = 10
-
-train_file = 'input/train.csv'
-test_file = 'input/test.csv'
-store_file = 'input/store.csv'
-output_file = 'output/new_rossmann_prediction.csv'
-output_train = 'output/trainPartitioned.csv'
-output_test = 'output/testPartitioned.csv'
-
-unavailable_features = ['Store', 'Customers', 'PromoInterval', 'StateHoliday', 'DayOfWeek', 'Assortment', \
-                        'StoreType','CompetitionOpenSinceMonth', 'CompetitionOpenSinceYear', 'Day', 'Month', 'Year']
-label = ['Sales']
-integer_features = ['CompetitionDistance', 'Year']
-boolean_features = ['Open', 'Promo','SchoolHoliday','WeekofYear', 'Promo2', \
-                    'StoreTypeA', 'StoreTypeB', 'StoreTypeC', 'StoreTypeD', \
-                    'AssortA', 'AssortB', 'AssortC', \
-                    'DayMon', 'DayTue', 'DayWed', 'DayThu', 'DayFri', 'DaySat', 'DaySun', \
-                    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', \
-                    'StateHolidayA', 'StateHolidayB', 'StateHolidayC'] #"Year" #+ list(range(2013, datetime.datetime.now().year+1))
-
-COLUMNS = integer_features + boolean_features + label
-FIELD_DEFAULTS = len(integer_features) * [[0]] + len(boolean_features) * [[0]] + len(label) * [[0.0]]
-
-
 # ~~~~ PREPROCESS HELPER FUNCTIONS ~~~~
 
 def preprocess(data, store):
@@ -57,7 +29,7 @@ def preprocess(data, store):
     data['Year'] = data.index.year
     data['Month'] = data.index.month
     data['Day'] = data.index.day
-    data['WeekofYear'] = data.index.weekofyear
+    data['WeekOfYear'] = data.index.weekofyear
     # Missing values, removes zero sales stores and closed stores
     data = data[(data["Open"] != 0) & (data["Sales"] != 0)]
     # Missing values in store
@@ -65,49 +37,9 @@ def preprocess(data, store):
     store.fillna(0,inplace = True)
     # Merging the two datasets together
     data_store = pd.merge(data, store, how = 'inner', on = 'Store')
-    # One Hot Encoding of Store Type
-    data_store['StoreTypeA'] = int(data_store['StoreType'] == 'a')
-    data_store['StoreTypeB'] =  int(data_store['StoreType'] == 'b') 
-    data_store['StoreTypeC'] =  int(data_store['StoreType'] == 'c') 
-    data_store['StoreTypeD'] =  int(data_store['StoreType'] == 'd') 
-    data_store = data_store.drop(columns = ['StoreType'])
-    # One Hot Encoding of Assortment
-    data_store['AssortA'] =  int(data_store['Assortment'] == 'a') 
-    data_store['AssortB'] =  int(data_store['Assortment'] == 'b') 
-    data_store['AssortC'] =  int(data_store['Assortment'] == 'c') 
-    data_store = data_store.drop(columns = ['Assortment'])
-    # One Hot Encoding of Day Of Week
-    data_store['DayMon'] = int(1 == data_store["DayOfWeek"]) 
-    data_store['DayTue'] = int(2 == data_store["DayOfWeek"]) 
-    data_store['DayWed'] = int(3 == data_store["DayOfWeek"]) 
-    data_store['DayThu'] = int(4 == data_store["DayOfWeek"]) 
-    data_store['DayFri'] = int(5 == data_store["DayOfWeek"]) 
-    data_store['DaySat'] = int(6 == data_store["DayOfWeek"]) 
-    data_store['DaySun'] = int(7 == data_store["DayOfWeek"]) 
-    data_store = data_store.drop(columns = ['DayOfWeek'])
-    # One Hot Encoding of Month of Year
-    data_store['Jan'] = int("Jan" in data_store['Month']) 
-    data_store['Feb'] = int("Feb" in data_store['Month']) 
-    data_store['Mar'] = int("Mar" in data_store['Month']) 
-    data_store['Apr'] = int("Apr" in data_store['Month']) 
-    data_store['May'] = int("May" in data_store['Month']) 
-    data_store['Jun'] = int("Jun" in data_store['Month']) 
-    data_store['Jul'] = int("Jul" in data_store['Month']) 
-    data_store['Aug'] = int("Aug" in data_store['Month']) 
-    data_store['Sep'] = int("Sep" in data_store['Month']) 
-    data_store['Oct'] = int("Oct" in data_store['Month']) 
-    data_store['Nov'] = int("Nov" in data_store['Month']) 
-    data_store['Dec'] = int("Dec" in data_store['Month']) 
-    data_store = data_store.drop(columns = ['Month'])
-        # One Hot Encoding of State Holiday Statistic
-    data_store['StateHolidayA'] =  int(data_store['StateHoliday'] == 'a') 
-    data_store['StateHolidayB'] =  int(data_store['StateHoliday'] == 'b') 
-    data_store['StateHolidayC'] =  int(data_store['StateHoliday'] == 'c') 
-    data_store = data_store.drop(columns = ['StateHoliday'])
-    # One Hot Encoding of Year
-    # for i in range(2013, datetime.datetime.now().year+1):
-    #     data_store[str(i)] = (i in data_store['Year'])
-    # data_store = data_store.drop(columns = ['Year'])
+    # Change date from [1,7] to [0,6] for efficient reading into feature column.
+    data_store["DayOfWeek"] = data_store["DayOfWeek"].apply(lambda x: x - 1)
+    # make DayOfWeek a string for use with categorical identity feature column
     # Removal of information with no effect
     data_store = data_store.drop(columns = ['Day'])
     data_store = data_store.drop(columns = ['PromoInterval'])
@@ -117,7 +49,11 @@ def preprocess(data, store):
     data_store = data_store.drop(columns=['CompetitionOpenSinceYear'])
     data_store = data_store.drop(columns=['Promo2SinceWeek'])
     data_store = data_store.drop(columns=['Promo2SinceYear'])
+    # sort columns so that it matches the order specified in __init__.py
+    data_store = data_store[COLUMNS]
+
     print("columns of data_store: {}".format(list(data_store)))
+    print(data_store.head())
 
     #take 80% for training, 20% for validation
     total = len(data_store)
@@ -191,12 +127,21 @@ def build_model_columns():
     # boolean categorical columns
     for col in boolean_features:
         features.append(tf.feature_column.categorical_column_with_identity(key=col, num_buckets=2)) # [0, 1]
+    # integer categorical columns (ranging in integers)
+    for key_name, item in categorical_identity_features.items():
+        # print("for {}, len {}".format(key_name, item))
+        features.append(tf.feature_column.categorical_column_with_identity(
+            key=key_name,
+            num_buckets=len(item) #[0,7) = [Mon, Tue, Wed, ..., Sun]
+        ))
+    # categorical columns with vocabulary
+    for key_name, item in categorical_features.items():
+        features.append(tf.feature_column.categorical_column_with_vocabulary_list(
+            key=key_name,
+            vocabulary_list=item
+        ))
     return features
 
-if __name__ == "__main__":
-    # train, store = input_data(train_file, store_file)
-    # preprocess(train, store)
-    dataset = input_evaluation_set(2)
 """
 Old model.py code:
 #credits: https://www.kaggle.com/elenapetrova/time-series-analysis-and-forecasts-with-prophet
