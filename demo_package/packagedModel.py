@@ -14,7 +14,7 @@
 # The feature column function builds the feature columns based on
 # their type (boolean, integer, float, etc) 
 
-# Usage: python -m demo.task (from outside this directory)
+# Usage: python -m demo_package.task (from outside this directory)
 # It is not a python program, and init holds all the global variables, 
 # so program will fail when called as: python packagedModel.py
 from . import * 

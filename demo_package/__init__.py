@@ -1,6 +1,6 @@
 # Justin Or, Feb 2019
 
-# Usage: python -m demo.task
+# Usage: python -m demo_package.task
 # Make sure you are one folder outside the demo directory
 # It is not a python program, and init holds all the global variables, 
 # so program will fail when called as: python packagedModel.py
