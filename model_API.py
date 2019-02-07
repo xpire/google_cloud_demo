@@ -1,6 +1,6 @@
 """
 Simple wrapper API for choosing different models 
-(maybe) improve for later escaping))
+{(maybe) improve for later escaping}
                 _ ___                /^^\ /^\  /^^\_
     _          _@)@) \            ,,/ '` ~ `'~~ ', `\.
   _/o\_ _ _ _/~`.`...'~\        ./~~..,'`','',.,' '  ~:
@@ -28,7 +28,7 @@ import numpy as np
 import pandas as pd
 
 # Model for fixed model
-class model:
+class Model:
     def __init__(self):
         # currently what type of optimizer ?
         self._feature_col = None 
