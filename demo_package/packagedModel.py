@@ -3,8 +3,6 @@
 # Packaged Estimator Model for use on Google CloudML
 # Contains all the model logic of the package.
 
-# Constants will go in the __init__.py file
-
 # Preprocessing will be made into a dataflow apache beam pipeline
 
 # Defines the input function and the feature column functions 
@@ -38,8 +36,8 @@ def preprocess(data, store):
     # Merging the two datasets together
     data_store = pd.merge(data, store, how = 'inner', on = 'Store')
     # Change date from [1,7] to [0,6] for efficient reading into feature column.
-    data_store["DayOfWeek"] = data_store["DayOfWeek"].apply(lambda x: x - 1)
-    # make DayOfWeek a string for use with categorical identity feature column
+    data_store["DayOfWeek"] = data_store["DayOfWeek"].apply(lambda x: int(x - 1))
+    data_store["Month"] = data_store["Month"].apply(lambda x: int(x - 1))
     # Removal of information with no effect
     data_store = data_store.drop(columns = ['Day'])
     data_store = data_store.drop(columns = ['PromoInterval'])
@@ -51,20 +49,35 @@ def preprocess(data, store):
     data_store = data_store.drop(columns=['Promo2SinceYear'])
     # sort columns so that it matches the order specified in __init__.py
     data_store = data_store[COLUMNS]
+    # assert the correct data types are applied in each column
+    for key in integer_features + boolean_features + list(categorical_identity_features.keys()) + list(bucket_categorical_features.keys()):
+        data_store[key] = data_store[key].apply(lambda x: int(x))
+    for key in list(categorical_features.keys()):
+        data_store[key] = data_store[key].apply(lambda x: str(x))
 
     print("columns of data_store: {}".format(list(data_store)))
     print(data_store.head())
 
     #take 80% for training, 20% for validation
     total = len(data_store)
+    data_store.to_csv(output_file)
     # idx = np.random.permutation(total)
     data_store = data_store.sample(frac=1)
-    train = data_store.iloc[:, :int(total*0.8)]
-    test = data_store.iloc[:, int(total*0.8):]
-    train.to_csv(output_train)
-    test.to_csv(output_test)
-    data_store.to_csv(output_file, index=True)
-    return data_store
+    train = data_store.iloc[:int(total*0.8), :]
+    test = data_store.iloc[int(total*0.8):, :]
+    print("Train")
+    print(train.head())
+    print("Test")
+    print(test.head())
+    # Calculating baseline to beat
+    mean_sales = test["Sales"].mean()
+    mse = test["Sales"].apply(lambda x: np.square(x-mean_sales)).mean()
+    print("The MSE to beat is {}".format(mse))
+    
+    train.to_csv(output_train, index=False)
+    test.to_csv(output_test, index=False)
+    # data_store.to_csv(output_file)
+    # return data_store
 
 
 # ~~~~ INPUT FUNCTIONS ~~~~
@@ -78,9 +91,17 @@ def input_data(data_dir, store_dir):
                         low_memory= False)
     return data, store
 
-def input_evaluation_set(stage):
-    if not isinstance(stage, int):
-        exit()
+def get_data( csv_file, preprocess_data):
+    if preprocess_data:
+        print("Preprocess 1. Reading in data.")
+        eval, store = input_data(train_file, store_file)
+        print("Preprocess 2. Preproccessing data.")
+        preprocess(eval, store)
+    dataframe = pd.read_csv(csv_file)
+    print(dataframe.head())
+    return dataframe
+
+def input_set(preprocess_data, csv_file=output_file):
 
     def _parse_line(line):
         # Decode line into fields
@@ -91,30 +112,21 @@ def input_evaluation_set(stage):
         separatedLabel = features.pop('Sales')
         return features, separatedLabel
     
-    if stage <= 0:
-        print("~~~~STAGE 0~~~~")
-        eval, store = input_data(train_file, store_file)
-    if stage <= 1:
-        print("~~~~STAGE 1~~~~")
-        data_store = preprocess(eval, store)
-    #separate the X and Y components
-    # label = data_store['Sales'].values
-    # data_store = data_store.drop(columns = ['Sales'])
-    # Convert to a tensorflow Dataset
-    if stage <= 2:
-        print("~~~~STAGE 2~~~~")
-        ds = tf.data.TextLineDataset(output_train).skip(1)
-    if stage <= 3:
-        print("~~~~STAGE 3~~~~")
-        print(ds)
-        print(FIELD_DEFAULTS)
-        ds = ds.map(_parse_line)
+    get_data(csv_file, preprocess_data)
+    ds = tf.data.TextLineDataset(csv_file).skip(1)
+    print("Input 1: Parsing lines.")
+    print(ds)
+    print(FIELD_DEFAULTS)
+    ds = ds.map(_parse_line)
     print("ds: {}".format(ds))
     ds = ds.shuffle(1000).repeat().batch(BATCHSIZE)
-    # data_set = tf.data.Dataset.from_tensor_slices(
-    #     (tf.cast(data_store[integer].values, tf.float))
-    # )
     return ds
+
+def input_train_set():
+    return input_set(True, output_train)
+
+def input_eval_set():
+    return input_set(False, output_test)
 
 # ~~~~ FEATURE COLUMN FUNCTIONS ~~~~
 
@@ -139,6 +151,11 @@ def build_model_columns():
         features.append(tf.feature_column.categorical_column_with_vocabulary_list(
             key=key_name,
             vocabulary_list=item
+        ))
+    for key_name, item in bucket_categorical_features.items():
+        features.append(tf.feature_column.bucketized_column(
+            source_column=tf.feature_column.numeric_column(key_name),
+            boundaries=item
         ))
     return features
 

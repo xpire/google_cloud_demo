@@ -17,17 +17,19 @@ import numpy as np
 import pandas as pd
 
 if __name__ == "__main__":
-    # train, store = input_data(train_file, store_file)
-    # preprocess(train, store)
+    tf.logging.set_verbosity(tf.logging.INFO)
+    # Turn on tensorboard:
+    #   tensorboard --logdir={$MODEL_DIR}
     print(train_file)
-    dataset = input_evaluation_set(0)
     features = build_model_columns()
-    mdl = Model()
-    mdl.set_feat_col(features)
-    mdl.set_model()
-    # mdl.train()
+    train_spec = tf.estimator.TrainSpec(input_fn=lambda : input_train_set(), max_steps=NUMITERATIONS)
+    eval_spec = tf.estimator.EvalSpec(input_fn=lambda : input_eval_set())
+    print(train_spec)
+    print(eval_spec)
+    mdl = Model() \
+        .set_feat_col(features) \
+        .set_model()
 
-    # classifier = tf.estimator.DNNRegressor(
-    #     feature_columns=features,
-    #     hidden_units=[10, 10]
-    # )
+    mdl.set_train_spec(train_spec)
+    mdl.set_eval_spec(eval_spec)
+    mdl.train_and_evaluate()

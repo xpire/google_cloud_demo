@@ -18,11 +18,11 @@ Simple wrapper API for choosing different models
 
 """
 
-PATH = "./model_check/"
-
 """
 Importing libraries
 """
+from . import *
+from .packagedModel import *
 import tensorflow as tf
 import numpy as np
 import pandas as pd
@@ -33,6 +33,8 @@ class Model:
         # currently what type of optimizer ?
         self._feature_col = None 
         self._model = None
+        self._train_spec = None
+        self._eval_spec = None
 
     # Set feature column of the model
     def set_feat_col(self, feature_col):
@@ -49,36 +51,28 @@ class Model:
             print("Model error.")
         else:
             # Set the correct model
+            # self._model = tf.estimator.DNNRegressor(
+            #     hidden_units=[20],
             self._model = tf.estimator.LinearRegressor(
                 feature_columns=self._feature_col,
-                model_dir=PATH
+                model_dir=PATH,
+                optimizer=tf.train.AdamOptimizer(learning_rate=LEARNINGRATE)
+                #warm_start_from=PATH
             )
 
         return self
 
-    # Training model
-    def train(self, input_fn=None): 
-        # Input function
-        if (input_fn == None or self._model == None): 
-            print("No input function.")
-        else:
-            self._model.train(input_fn=input_fn)
+    # define Train Spec
+    def set_train_spec(self, train_spec):
+        self._train_spec = train_spec
+        
+    # define Eval Spec
+    def set_eval_spec(self, eval_spec):
+        self._eval_spec = eval_spec
 
-
-    # evaluation
-    def eval(self, input_fn=None):
-        if (self._model == None or input_fn == None):
-            print("Please set model or redefine input function. ")
-        else:
-            result = self._model.evaluate(input_fn=input_fn)
-
-            # print("Evaluation results")
-            # for key in result:
-            #     print("   {}, was: {}".format(key, result[key]))
-
-    # Prediction using the model
-    def predict(self, input_fn=None):
-        if (self._model == None or input_fn == None):
-            print("Please set model or redefine input function. ")
-        else:
-            self._model.predict(input_fn=input_fn)
+    # Train and Evaluate function
+    def train_and_evaluate(self):
+        if self._eval_spec == None or self._train_spec == None:
+            print("Please instantiate eval and train specs.")
+        else: 
+            tf.estimator.train_and_evaluate(self._model, self._train_spec, self._eval_spec)
