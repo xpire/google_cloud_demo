@@ -89,6 +89,8 @@ def input_data(data_dir, store_dir):
                         index_col= 'Date')
     store = pd.read_csv(store_dir,
                         low_memory= False)
+    print(store.head())
+    print(data.head())
     return data, store
 
 def get_data( csv_file, preprocess_data):
@@ -157,6 +159,8 @@ def build_model_columns():
             source_column=tf.feature_column.numeric_column(key_name),
             boundaries=item
         ))
+
+    #define feature engineering here
     return features
 
 """

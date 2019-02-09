@@ -9,10 +9,10 @@
 NPREDICTORS = 27 #len(features)
 NOUTPUTS = 1 #len(target)
 NHIDDEN = 20
-NUMITERATIONS = 5000
+NUMITERATIONS = 83000
 BATCHSIZE = 1000
 HYPERPARAMETERTUNING = 10
-LEARNINGRATE = 0.1
+LEARNINGRATE = 0.01
 
 PATH = "./model_check/"
 
@@ -29,7 +29,7 @@ label = ['Sales']
 integer_features = ['CompetitionDistance', 'Year']
 boolean_features = ['Open', 'Promo','SchoolHoliday', 'Promo2']
 categorical_features = {"Assortment" : ["A", "B", "C"], \
-                        "StateHoliday" : ["A", "B", "C"], \
+                        "StateHoliday" : ["0","A", "B", "C"], \
                         "StoreType" : ["A", "B", "C", "D"] }
 categorical_identity_features = {"DayOfWeek": [0,1,2,3,4,5,6],  #0 = mon, 1 = tue, ..., 6 = sun  
                                 "Month": [0,1,2,3,4,5,6,7,8,9,10,11]}

@@ -20,7 +20,6 @@ if __name__ == "__main__":
     tf.logging.set_verbosity(tf.logging.INFO)
     # Turn on tensorboard:
     #   tensorboard --logdir={$MODEL_DIR}
-    print(train_file)
     features = build_model_columns()
     train_spec = tf.estimator.TrainSpec(input_fn=lambda : input_train_set(), max_steps=NUMITERATIONS)
     eval_spec = tf.estimator.EvalSpec(input_fn=lambda : input_eval_set())
@@ -33,3 +32,4 @@ if __name__ == "__main__":
     mdl.set_train_spec(train_spec)
     mdl.set_eval_spec(eval_spec)
     mdl.train_and_evaluate()
+    mdl.evaluate()

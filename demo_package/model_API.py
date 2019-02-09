@@ -56,8 +56,8 @@ class Model:
             self._model = tf.estimator.LinearRegressor(
                 feature_columns=self._feature_col,
                 model_dir=PATH,
-                optimizer=tf.train.AdamOptimizer(learning_rate=LEARNINGRATE)
-                #warm_start_from=PATH
+                optimizer=tf.train.AdamOptimizer(learning_rate=LEARNINGRATE),
+                warm_start_from=PATH
             )
 
         return self
@@ -76,3 +76,8 @@ class Model:
             print("Please instantiate eval and train specs.")
         else: 
             tf.estimator.train_and_evaluate(self._model, self._train_spec, self._eval_spec)
+
+    def evaluate(self):
+        self._model.evaluate(input_fn=lambda: input_eval_set(), steps=10)
+
+    # def predict(self):
