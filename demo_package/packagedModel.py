@@ -100,6 +100,7 @@ def get_data(csv_file, preprocess_data):
         eval, store = input_data(train_file, store_file)
         print("Preprocess 2. Preproccessing data.")
         preprocess(eval, store)
+    
     if STORAGE_TYPE == "local":
         with open(csv_file, 'r') as open_input:
             dataframe = pd.read_csv(open_input)

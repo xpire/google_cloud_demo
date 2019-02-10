@@ -84,7 +84,7 @@ class Model:
         if (self._feature_col == None):
             print("Model error.")
         else:
-            training_config = tf.estimator.RunConfig(model_dir=PATH, save_summary_steps=100, save_checkpoints_steps=100, save_checkpoints_secs=120)
+            training_config = tf.estimator.RunConfig(model_dir=PATH, save_summary_steps=100, save_checkpoints_steps=100)
             # Set the correct model
             # self._model = tf.estimator.DNNRegressor(
             #     hidden_units=[20],
