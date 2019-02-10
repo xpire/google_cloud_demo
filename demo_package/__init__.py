@@ -5,23 +5,48 @@
 # It is not a python program, and init holds all the global variables, 
 # so program will fail when called as: python packagedModel.py
 
-# ~~~~ CONSTANTS ~~~~
-NPREDICTORS = 27 #len(features)
-NOUTPUTS = 1 #len(target)
-NHIDDEN = 20
-NUMITERATIONS = 83000
-BATCHSIZE = 1000
-HYPERPARAMETERTUNING = 10
-LEARNINGRATE = 0.01
+import argparse
+import time
 
-PATH = "./model_check/"
+# ~~~~ PARSE ARGUMENTS ~~~~
+parser = argparse.ArgumentParser()
+parser.add_argument("--train_data_paths", default='demo_package/output/trainPartitioned.csv', help='Where train data is stored.')
+parser.add_argument("--eval_data_paths", default='demo_package/output/testPartitioned.csv', help="Where test data is stored.")
+parser.add_argument("--output_dir", default=".\\model_check\\", help="Where the output will be stored.")
+parser.add_argument("--train_steps", default=10000, type=int, help="Number of training steps.")
+parser.add_argument("--batch_size", default=1000, type=int, help="Size of batches for training.")
+parser.add_argument("--learning_rate", default=0.001, type=float, help="Learning rate for the optimizer.")
+parser.add_argument("--job-dir", default=".\\model_check\\", help="Where the job data will be stored at.")
+parser.add_argument("--storage_type", default="gcs", choices=["gcs", "bq", "local"])
+
+args = parser.parse_args()
+# ~~~~ CONSTANTS ~~~~
+# NPREDICTORS = 27 #len(features)
+# NOUTPUTS = 1 #len(target)
+# NHIDDEN = 20
+NUMITERATIONS = args.train_steps
+BATCHSIZE = args.batch_size
+LEARNINGRATE = args.learning_rate
+STORAGE_TYPE = args.storage_type
+
+# Not used
+# HYPERPARAMETERTUNING = 10
+
+JOBDIR = args.job_dir
+# PATH = args.output_dir
+PATH = JOBDIR
+
+PROJECT_ID = "rich-principle-225813"
+DATASET_ID = "preprcessed"
+TIME = int(round(time.time() * 1000))
+NUM_PARTITIONS = 1 # choosing not to partitioned right now
 
 train_file = 'demo_package/input/train.csv'
 test_file = 'demo_package/input/test.csv'
 store_file = 'demo_package/input/store.csv'
-output_file = 'demo_package/output/new_rossmann_prediction.csv'
-output_train = 'demo_package/output/trainPartitioned.csv'
-output_test = 'demo_package/output/testPartitioned.csv'
+output_file = 'demo_package/output/total_historical_data_set.csv'
+output_train = args.train_data_paths
+output_test = args.eval_data_paths
 
 unavailable_features = ['Store', 'Customers', 'PromoInterval', 'StateHoliday', 'DayOfWeek', 'Assortment', \
                         'StoreType','CompetitionOpenSinceMonth', 'CompetitionOpenSinceYear', 'Day', 'Month', 'Year']

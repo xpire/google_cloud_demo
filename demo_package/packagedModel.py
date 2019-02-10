@@ -20,6 +20,7 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 import datetime
+# from tf.contrib.cloud import BigQueryReader
 # ~~~~ PREPROCESS HELPER FUNCTIONS ~~~~
 
 def preprocess(data, store):
@@ -93,14 +94,38 @@ def input_data(data_dir, store_dir):
     print(data.head())
     return data, store
 
-def get_data( csv_file, preprocess_data):
+def get_data(csv_file, preprocess_data):
     if preprocess_data:
         print("Preprocess 1. Reading in data.")
         eval, store = input_data(train_file, store_file)
         print("Preprocess 2. Preproccessing data.")
         preprocess(eval, store)
-    dataframe = pd.read_csv(csv_file)
-    print(dataframe.head())
+    if STORAGE_TYPE == "local":
+        with open(csv_file, 'r') as open_input:
+            dataframe = pd.read_csv(open_input)
+            print(dataframe.head())
+    elif STORAGE_TYPE == "gcs":
+        # for use with cloud storage
+        with tf.gfile.Open(csv_file, 'r') as open_input:
+            dataframe = pd.read_csv(open_input)
+            print(dataframe.head())
+    elif STORAGE_TYPE == "bq":
+        # if "train" in csv_file:
+        #     TABLE_ID = "train"
+        # elif "test" in csv_file:
+        #     TABLE_ID = "test"
+        # else:
+        #     print("csv_file ({}) does not contain the word train or test, so we cannot infer whether this is the train or test dataset.".format(csv_file))
+        #     exit(1)
+        # reader = BigQueryReader(
+        #     project_id=PROJECT_ID,
+        #     dataset_id=DATASET_ID,
+        #     table_id=TABLE_ID,
+        #     timestamp_millis=TIME,
+        #     num_partitions=NUM_PARTITIONS,
+        #     features=build_model_columns()
+        # )
+        exit(1)
     return dataframe
 
 def input_set(preprocess_data, csv_file=output_file):
@@ -125,7 +150,10 @@ def input_set(preprocess_data, csv_file=output_file):
     return ds
 
 def input_train_set():
-    return input_set(True, output_train)
+    if STORAGE_TYPE == "local":
+        return input_set(True, output_train)
+    else:
+        return input_set(False, output_train)
 
 def input_eval_set():
     return input_set(False, output_test)
