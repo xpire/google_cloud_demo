@@ -13,6 +13,7 @@ Simple wrapper API for choosing different models
    `'~~ `'~~ `'~~ `'~~  \(_)(_)(_)/  `~~' \(_)(_)(_)/ ~'`\_.._,._,'_;_;_;_;_;
 
     Author: Even Tang
+    Editor: Justin Or
     Project: project Rossman
     Date: Jan 2019
 
@@ -23,7 +24,7 @@ Importing libraries
 """
 from . import *
 from .packagedModel import *
-from .task import *
+# from .task import *
 import tensorflow as tf
 import numpy as np
 import pandas as pd
@@ -42,7 +43,7 @@ class Model:
             # Year
             # DayOfWeek
             # Month
-            # MonthWeekOfYear
+            # WeekOfYear
     # - StoreID:
             # CompetitionDistance
             # Promo2
@@ -53,22 +54,50 @@ class Model:
     # - StateHoliday
     # - SchoolHoliday
     # this change will increase usability
+    # NOTE: This function is called during evaluation loop of train_and_evaluate. If we implement the above change,
+    #       We will have to change how inputs are taken in everywhere and apply a similar change to the normal input
+    #       functions. 
     def serving_input_function(self):
-        feature_placeholders = {}
+        # OLD IMPLEMENTATION
+        # feature_placeholders = {}
+        # for col in integer_features:
+        #     feature_placeholders[col] = tf.placeholder(tf.int64, [None])
+        # for col in boolean_features:
+        #     feature_placeholders[col] = tf.placeholder(tf.int64, [None])
+        # for key_name in categorical_features.keys():
+        #     feature_placeholders[key_name] = tf.placeholder(tf.string, [None])
+        # for key_name in categorical_identity_features.keys():
+        #     feature_placeholders[key_name] = tf.placeholder(tf.int64, [None])
+        # for key_name in bucket_categorical_features.keys():
+        #     feature_placeholders[key_name] = tf.placeholder(tf.int64, [None])
+
+        # features = { key_name: tf.expand_dims(tensor, -1) for key_name, tensor in feature_placeholders.items() }
+
+        # return tf.estimator.export.ServingInputReceiver(features, feature_placeholders)
+        
+        #NEW IMPLEMENTATION (from tensorflow documentation)
+        default_batch_size = None
+
+        feature_spec = {}
         for col in integer_features:
-            feature_placeholders[col] = tf.placeholder(tf.int64, [None])
+            feature_spec[col] = tf.FixedLenFeature([], dtype=tf.int64)  
         for col in boolean_features:
-            feature_placeholders[col] = tf.placeholder(tf.int64, [None])
+            feature_spec[col] = tf.FixedLenFeature([], dtype=tf.int64)
         for key_name in categorical_features.keys():
-            feature_placeholders[key_name] = tf.placeholder(tf.string, [None])
+            feature_spec[key_name] = tf.FixedLenFeature([], tf.string)
         for key_name in categorical_identity_features.keys():
-            feature_placeholders[key_name] = tf.placeholder(tf.int64, [None])
+            feature_spec[key_name] = tf.FixedLenFeature([], dtype=tf.int64)
         for key_name in bucket_categorical_features.keys():
-            feature_placeholders[key_name] = tf.placeholder(tf.int64, [None])
+            feature_spec[key_name] = tf.FixedLenFeature([], dtype=tf.int64)
 
-        features = { key_name: tf.expand_dims(tensor, -1) for key_name, tensor in feature_placeholders.items() }
-
-        return tf.estimator.export.ServingInputReceiver(features, feature_placeholders)
+        serialised_example = tf.placeholder(
+            dtype=tf.string,
+            shape=[default_batch_size],
+            name='input_example_tensor'
+        )
+        receiver_tensors = {'examples' : serialised_example}
+        features = tf.parse_example(serialised_example, feature_spec)
+        return tf.estimator.export.ServingInputReceiver(features, receiver_tensors)
 
     # Set feature column of the model
     def set_feat_col(self, feature_col):
@@ -120,7 +149,7 @@ class Model:
         eval_spec = tf.estimator.EvalSpec(
             input_fn=lambda : input_eval_set(),
             exporters=exporters,
-            throttle_secs=600
+            throttle_secs=60
         )
         self._eval_spec = eval_spec
 

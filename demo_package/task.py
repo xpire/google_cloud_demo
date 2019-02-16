@@ -5,7 +5,7 @@
 
 # Constants will go in the __init__.py file
 
-# Usage: python -m demo.task (from outside this directory)
+# Usage: python -m demo_package.task (from outside this directory)
 # It is not a python program, and init holds all the global variables, 
 # so program will fail when called as: python task.py
 
