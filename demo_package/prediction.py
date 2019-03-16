@@ -14,6 +14,10 @@ import csv
 import time
 import re
 
+# TODO: host this script on google cloud functions
+# https://cloud.google.com/functions/features/
+
+
 # Given rows of information of the form: 
     # Date (Year, DayOfWeek, Month, WeekOfYear)
     # StoreID (CompetitionDistance, Promo2, Assortment, Storetype)
@@ -43,7 +47,7 @@ VERSION_ID = "rossmann_cbd_test_7"
 # Pub sub
 TOPIC_NAME = "rossmann_real_time"
 
-
+# Cloud ML
 PROJECT_NAME = "projects/" + PROJECT_ID
 MODEL_NAME = PROJECT_NAME + "/models/" + MODEL_ID
 VERSION_NAME = MODEL_NAME + "/versions/" + VERSION_ID
@@ -51,6 +55,8 @@ BUCKET_NAME  = "rossmann-cbd"
 SOURCE_FILE = "request.json"
 LIVE_FILE = "live.csv"
 DESTINATION_BLOB = "predictionOutputs/request.json"
+
+# GCS Bucket (https://cloud.google.com/storage/docs/access-control/iam to control access to buckets)
 INPUT_PATH = "gs://rossmann-cbd/predictionOutputs/request.json"
 OUTPUT_DIR = "predictionOutputs/results"
 OUTPUT_PATH = "gs://" + BUCKET_NAME + "/" + OUTPUT_DIR
@@ -58,7 +64,7 @@ OUTPUT_ID = "prediction.results"
 OUTPUT_NAME = OUTPUT_DIR + "/" + OUTPUT_ID
 # FINAL_OUTPUT = OUTPUT_DIR + "/" + OUTPUT_ID + ".output"
 # for cmd:
-# set GOOGLE_APPLICATION_CREDENTIALS=C:\Users\justi\uni\cloudbdsolutions//Test-Rossmann-2249d43821fe.json 
+# set GOOGLE_APPLICATION_CREDENTIALS=C:\Users\justi\uni\cloudbdsolutions\Test-Rossmann-2249d43821fe.json 
 # for PowerShell:
 # $env:GOOGLE_APPLICATION_CREDENTIALS="C:\Users\justi\uni\cloudbdsolutions\Test-Rossmann-2249d43821fe.json"
 GOOGLE_APPLICATION_CREDENTIALS = "../Test-Rossmann-2249d43821fe.json"
@@ -85,6 +91,8 @@ def generate_input_request(date_list, storeID_list):
 
 # From https://github.com/GoogleCloudPlatform/python-docs-samples/blob/master/storage/cloud-client/snippets.py
 # https://cloud.google.com/storage/docs/uploading-objects#storage-upload-object-python
+# TODO: move to cloudstorage package if we stage this on appengine/google cloud functions:
+#   https://cloud.google.com/appengine/docs/standard/python/googlecloudstorageclient/read-write-to-cloud-storage 
 # [START storage_upload_file]
 def upload_blob(bucket_name, source_file_name, destination_blob_name):
     """Uploads a file to the bucket."""
@@ -198,20 +206,20 @@ if __name__ == "__main__":
     # Generate the list of dates to predict for
     base = datetime.date(2015, 8, 1)
     date_list = [base + datetime.timedelta(days=x) for x in range(0, 7)]
-    # print(generate_input_request(date_list, range(1, 1115 + 1)))
 
     # Generate the list of StoreIds to predict for
     store_list = range(1, 1115 + 1)
+    # Test set: only one store (store 1)
     # store_list = [1]
     # Write to a json file
     source, live = generate_input_request(date_list, store_list)
     print(str(live[:5]) + "..." + str(live[-5:]))
+    # prevent New lines being added after every row: https://stackoverflow.com/questions/30929363/csv-writerows-puts-newline-after-each-row
     with open(SOURCE_FILE, "w+") as f, open(LIVE_FILE, "w+", newline='') as l:
         f.write(source)
         csv_writer = csv.writer(l, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
         for line in live:
             csv_writer.writerow(line)
-
 
     # upload file to gcs folder
     upload_blob(BUCKET_NAME, SOURCE_FILE, DESTINATION_BLOB)
@@ -222,12 +230,11 @@ if __name__ == "__main__":
     JOB_BODY = { 'jobId' : JOB_ID, 'predictionInput' : PredictionInput}
     JOB_NAME = '{}/jobs/{}'.format(PROJECT_NAME, JOB_ID)
 
-    
-    # RUN JOB ON CLOUD ML
+    # RUN JOB ON CLOUD ML (https://cloud.google.com/ml-engine/docs/tensorflow/batch-predict)
     ml = discovery.build('ml', 'v1')
     create_request = ml.projects().jobs().create(parent=PROJECT_NAME,
                                           body=JOB_BODY)
-    
+
     response = execute_request(create_request)
     
     print("Job status for {}.{}".format(PROJECT_NAME, JOB_ID))
@@ -235,8 +242,10 @@ if __name__ == "__main__":
     while True:
         now = time.time()
         header = ""
+        # Monitor Cloud ML job: (https://cloud.google.com/ml-engine/docs/tensorflow/monitor-training)
         get_request = ml.projects().jobs().get(name=JOB_NAME)
         response = execute_request(get_request)
+        # enum of possible states: https://cloud.google.com/ml-engine/reference/rest/v1/projects.jobs#State
         payload = response['state']
         exit_cond = ""
         if response == None:
@@ -261,6 +270,7 @@ if __name__ == "__main__":
     
     # job succeeded
     # append results into one consistent file
+    # https://medium.com/google-cloud/how-to-write-to-a-single-shard-on-google-cloud-storage-efficiently-using-cloud-dataflow-and-cloud-3aeef1732325
     files = list_blobs_with_prefix(BUCKET_NAME, prefix=OUTPUT_DIR)
     num_shards = find_max_shards(files)
     client = gcs.Client()
@@ -275,21 +285,24 @@ if __name__ == "__main__":
         blobs.append(blob)
     bucket.blob(OUTPUT_NAME).compose(blobs)
 
+    # List the new file
     files = list_blobs_with_prefix(BUCKET_NAME, prefix=OUTPUT_NAME)
     print(files)
 
+    # Download this file
     download_blob(BUCKET_NAME, OUTPUT_NAME, OUTPUT_ID)
 
-    #configuring Pub/Sub
+    # configuring Pub/Sub for batch (https://cloud.google.com/pubsub/docs/publisher#batching-to-balance-latency-and-throughput)
     batch_settings = pubsub_v1.types.BatchSettings(
         max_bytes=1024,  # One kilobyte
         max_latency=1,  # One second
     )
 
+    # Setting up Pub/Sub
     publisher = pubsub_v1.PublisherClient(batch_settings=batch_settings)
     topic_path = publisher.topic_path(PROJECT_ID, TOPIC_NAME)
 
-    # join results with requests and upload to Pub/Sub
+    # Join results with requests and upload to Pub/Sub
     with open(OUTPUT_ID, 'r') as open_results, open(LIVE_FILE, 'r') as open_live:
         results_reader = csv.reader(open_results, delimiter=',', quotechar='|')
         live_reader = csv.reader(open_live, delimiter=',', quotechar='|')
@@ -306,6 +319,13 @@ if __name__ == "__main__":
             future = publisher.publish(topic_path, data=data, origin="prediction")
 
     print("Data has finished publishing.")
+
+    # TODO: Data Studio doing custom queries (ie join predict with historical to get projections)
+    # https://cloud.google.com/bigquery/docs/visualize-data-studio#create_a_chart_using_a_custom_query
+
+    # TODO: push data from bigquery to csv (if larger than 1gb, needs to be separated into multiple files?)
+    # https://cloud.google.com/bigquery/docs/exporting-data
+
 
 
 

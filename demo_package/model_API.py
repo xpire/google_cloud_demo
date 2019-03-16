@@ -38,7 +38,7 @@ class Model:
         self._train_spec = None
         self._eval_spec = None
 
-    # To implement in the future: User only needs to enter:
+    # TODO: User only needs to enter:
     # - Date:
             # Year
             # DayOfWeek
@@ -114,6 +114,7 @@ class Model:
             print("Model error.")
         else:
             training_config = tf.estimator.RunConfig(model_dir=PATH, save_summary_steps=100, save_checkpoints_steps=100)
+            # TODO: Use a DNN regressor (need to change the )
             # Set the correct model
             # self._model = tf.estimator.DNNRegressor(
             #     hidden_units=[20],
@@ -127,7 +128,10 @@ class Model:
 
         return self
 
-    
+    # TODO: config.yaml for distributed training
+    # https://cloud.google.com/ml-engine/docs/tensorflow/distributed-tensorflow-mnist-cloud-datalab
+    # what to do with yaml file: https://cloud.google.com/ml-engine/docs/tensorflow/training-jobs
+
 
     # define Train Spec
     def set_train_spec(self):
