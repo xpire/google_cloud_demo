@@ -39,37 +39,6 @@ import re
 # --region us-central1 \
 # --data-format text
 
-# batch job prediction
-PROJECT_ID = "rich-principle-225813"
-MODEL_ID = "rossmann_cbd_test_7"
-VERSION_ID = "rossmann_cbd_test_7"
-
-# Pub sub
-TOPIC_NAME = "rossmann_real_time"
-
-# Cloud ML
-PROJECT_NAME = "projects/" + PROJECT_ID
-MODEL_NAME = PROJECT_NAME + "/models/" + MODEL_ID
-VERSION_NAME = MODEL_NAME + "/versions/" + VERSION_ID
-BUCKET_NAME  = "rossmann-cbd"
-SOURCE_FILE = "request.json"
-LIVE_FILE = "live.csv"
-DESTINATION_BLOB = "predictionOutputs/request.json"
-
-# GCS Bucket (https://cloud.google.com/storage/docs/access-control/iam to control access to buckets)
-INPUT_PATH = "gs://rossmann-cbd/predictionOutputs/request.json"
-OUTPUT_DIR = "predictionOutputs/results"
-OUTPUT_PATH = "gs://" + BUCKET_NAME + "/" + OUTPUT_DIR
-OUTPUT_ID = "prediction.results"
-OUTPUT_NAME = OUTPUT_DIR + "/" + OUTPUT_ID
-# FINAL_OUTPUT = OUTPUT_DIR + "/" + OUTPUT_ID + ".output"
-# for cmd:
-# set GOOGLE_APPLICATION_CREDENTIALS=C:\Users\justi\uni\cloudbdsolutions\Test-Rossmann-2249d43821fe.json 
-# for PowerShell:
-# $env:GOOGLE_APPLICATION_CREDENTIALS="C:\Users\justi\uni\cloudbdsolutions\Test-Rossmann-2249d43821fe.json"
-GOOGLE_APPLICATION_CREDENTIALS = "../Test-Rossmann-2249d43821fe.json"
-# SET THE GOOGLE_APPLICATION_CREDENTIALS: https://cloud.google.com/docs/authentication/getting-started
-
 # Combine dictionaries of the request and output as a string
 def generate_input_request(date_list, storeID_list):
     i = 0
