@@ -113,7 +113,7 @@ class Model:
         if (self._feature_col == None):
             print("Model error.")
         else:
-            training_config = tf.estimator.RunConfig(model_dir=PATH, save_summary_steps=100, save_checkpoints_steps=100)
+            training_config = tf.estimator.RunConfig(model_dir=JOBDIR, save_summary_steps=100, save_checkpoints_steps=100)
             # TODO: Use a DNN regressor (need to change the )
             # Set the correct model
             # self._model = tf.estimator.DNNRegressor(
@@ -121,9 +121,9 @@ class Model:
             self._model = tf.estimator.LinearRegressor(
                 config=training_config,
                 feature_columns=self._feature_col,
-                # model_dir=PATH,
+                # model_dir=JOBDIR,
                 optimizer=tf.train.AdamOptimizer(learning_rate=LEARNINGRATE)
-                # warm_start_from=PATH
+                # warm_start_from=JOBDIR
             )
 
         return self

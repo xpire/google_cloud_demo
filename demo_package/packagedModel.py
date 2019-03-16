@@ -20,7 +20,7 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 import datetime
-# from tf.contrib.cloud import BigQueryReader
+from google.cloud import bigquery
 # ~~~~ PREPROCESS HELPER FUNCTIONS ~~~~
 
 def preprocess(data, store):
@@ -118,6 +118,7 @@ def get_data(csv_file, preprocess_data):
         # else:
         #     print("csv_file ({}) does not contain the word train or test, so we cannot infer whether this is the train or test dataset.".format(csv_file))
         #     exit(1)
+        # client = bigquery.Client()
         # reader = BigQueryReader(
         #     project_id=PROJECT_ID,
         #     dataset_id=DATASET_ID,
@@ -126,6 +127,7 @@ def get_data(csv_file, preprocess_data):
         #     num_partitions=NUM_PARTITIONS,
         #     features=build_model_columns()
         # )
+        print("Big query connector not implemented yet.")
         exit(1)
     return dataframe
 
