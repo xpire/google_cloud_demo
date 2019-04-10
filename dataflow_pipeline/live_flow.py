@@ -30,11 +30,9 @@ from apache_beam.io.gcp.internal.clients import bigquery
 # Below are needed environment variables that 
 # is defined
 #############################################
-# BUCKET_FILENAME = "store.csv"
-# CLOUD_BUCKET = 'gs://rossmann-cbd/store.csv'
 STORE_INFO = []
-PROJECT = "rich-principle-225813"
-BUCKET = "live-data"
+PROJECT = "big-data-demo-219402"
+BUCKET = "demo-dataflow-data"
 RUNNER = "DataFlowRunner"
 
 # Get commandline arguments for the pipeline 
@@ -105,7 +103,7 @@ class merge_col(beam.DoFn):
             
             return line        
 
-        CLOUD_BUCKET = 'gs://rossmann-cbd/store.csv'
+        CLOUD_BUCKET = 'gs://demo-dataflow-data/store.csv'
         import apache_beam as beam
 
         store = []
@@ -124,7 +122,7 @@ class merge_col(beam.DoFn):
         store_id = element.pop(1) - 1
         for k in parset_hist(store[store_id]): 
             element.append(k)
-        
+
         '''
         ['Sales'0,
         'DayOfWeek'1,
@@ -197,21 +195,19 @@ def get_bqschema():
     ]
     
     table_schema = bigquery.TableSchema()
-
     for x in range(0, len(BIGQUERY_COLUMNS)): 
         source_field = bigquery.TableFieldSchema()
         source_field.name = BIGQUERY_COLUMNS[x]
         source_field.type = type_detect(x)
         source_field.mode = 'NULLABLE'
         table_schema.fields.append(source_field)
-
     return table_schema
 
 # Start main here 
 if __name__ == "__main__":
         with beam.Pipeline(argv=parseargs()) as p: 
-            BIGQUERY_LINK = 'live_test.test_live_rossman'
-            PUBSUB_TOPIC = "projects/rich-principle-225813/topics/rossmann_real_time"
+            BIGQUERY_LINK = 'cbdsolutions_new_data_set.Live_pool'
+            PUBSUB_TOPIC = "projects/big-data-demo-219402/topics/real_time_publish"
 
             live_data = (p
                 | "Read live data" >> beam.io.ReadStringsFromPubSub(topic=PUBSUB_TOPIC)
@@ -227,5 +223,3 @@ if __name__ == "__main__":
     
             
             logging.getLogger().setLevel(logging.INFO)
-
-
