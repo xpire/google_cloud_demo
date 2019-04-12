@@ -25,6 +25,7 @@ data = data[(data["Open"] != 0) & (data["Sales"] != 0)]
 # Missing values in store
 store['CompetitionDistance'].fillna(store['CompetitionDistance'].median(), inplace = True)
 store.fillna(0,inplace = True)
+# store.to_csv("demo_package/temp/store.csv")
 # Merging the two datasets together
 data_store = pd.merge(data, store, how = 'inner', on = 'Store')
 # Change date from [1,7] to [0,6] for efficient reading into feature column.
@@ -66,9 +67,9 @@ data_store.to_csv(output_file, index=False)
 # mse = test["Sales"].apply(lambda x: np.square(x-mean_sales)).mean()
 # print("The MSE to beat is {}".format(mse))
 
-# train.to_csv(output_train, index=False)
-# test.to_csv(output_test, index=False)
-# data_store.to_csv(output_file)
-# return data_store
+train.to_csv(output_train, index=False)
+test.to_csv(output_test, index=False)
+data_store.to_csv(output_file)
+return data_store
 
 

@@ -111,14 +111,15 @@ def get_data(csv_file, preprocess_data):
             dataframe = pd.read_csv(open_input)
             print(dataframe.head())
     elif STORAGE_TYPE == "bq":
-        # if "train" in csv_file:
-        #     TABLE_ID = "train"
-        # elif "test" in csv_file:
-        #     TABLE_ID = "test"
-        # else:
-        #     print("csv_file ({}) does not contain the word train or test, so we cannot infer whether this is the train or test dataset.".format(csv_file))
+        if any(word in "train Train" for word in csv_file):
+            TABLE_ID = "TrainingSet"
+        elif any(word in "test Test" for word in csv_file):
+            TABLE_ID = "TestingSet"
+        else:
+            print("csv_file ({}) does not contain the word train or test, so we cannot infer whether this is the train or test dataset.".format(csv_file))
         #     exit(1)
-        # client = bigquery.Client()
+        # print("Big query connector not implemented yet.")
+        client = bigquery.Client()
         # reader = BigQueryReader(
         #     project_id=PROJECT_ID,
         #     dataset_id=DATASET_ID,
@@ -127,8 +128,21 @@ def get_data(csv_file, preprocess_data):
         #     num_partitions=NUM_PARTITIONS,
         #     features=build_model_columns()
         # )
-        print("Big query connector not implemented yet.")
-        exit(1)
+        dataset_ref = client.dataset(DATASET_ID, project=PROJECT_ID)
+        table_ref = dataset_ref.table(TABLE_ID)
+        
+        extract_job = client.extract_table(
+            table_ref,
+            csv_file       # a bucket location
+            # location='us-central1'   # Must match location of source table
+        )
+        extract_job.result()
+
+        print('Exported {}:{}.{} to {}'.format(PROJECT_ID, DATASET_ID, TABLE_ID, csv_file))
+        # Open the corresponding test or train set
+        with tf.gfile.Open(csv_file, 'r') as open_input:
+            dataframe = pd.read_csv(open_input)
+            print(dataframe.head())
     return dataframe
 
 def input_set(preprocess_data, csv_file=output_file):

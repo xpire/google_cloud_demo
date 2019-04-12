@@ -1,5 +1,7 @@
 # Justin Or Feb 2019
-
+# in datalab, inside big-data-demo CBD
+# use this command to start it:
+# datalab connect --zone us-central1-a --port 8081 prediction?
 from . import *
 import json
 import datetime
@@ -295,9 +297,3 @@ if __name__ == "__main__":
     # TODO: push data from bigquery to csv (if larger than 1gb, needs to be separated into multiple files?)
     # https://cloud.google.com/bigquery/docs/exporting-data
 
-
-
-
-
-
-            

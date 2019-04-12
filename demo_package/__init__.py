@@ -12,6 +12,7 @@ import itertools
 import datetime
 import random
 from numpy.random import choice
+import tensorflow as tf
 
 # 88888888ba   88888888ba     ,ad8888ba,           88  88888888888  ,ad8888ba,  888888888888  
 # 88      "8b  88      "8b   d8"'    `"8b          88  88          d8"'    `"8b      88       
@@ -41,8 +42,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--train_data_paths", default='demo_package/output/trainPartitioned.csv', help='Where train data is stored.')
 parser.add_argument("--eval_data_paths", default='demo_package/output/testPartitioned.csv', help="Where test data is stored.")
 parser.add_argument("--store_data_path", default='demo_package/input/store.csv', help="Where the store.csv file is stored.")
+parser.add_argument("--original_train_data_path", default='demo_package/input/train.csv', help="Where the original train.csv file is stored")
 parser.add_argument("--output_dir", default=".\\model_check\\", help="Where the output will be stored.")
-parser.add_argument("--train_steps", default=13500, type=int, help="Number of training steps.")
+parser.add_argument("--train_steps", default=14000, type=int, help="Number of training steps.")
 parser.add_argument("--batch_size", default=1000, type=int, help="Size of batches for training.")
 parser.add_argument("--learning_rate", default=0.001, type=float, help="Learning rate for the optimizer.")
 parser.add_argument("--job-dir", default=".\\model_check\\", help="Where the job data will be stored at.")
@@ -61,12 +63,13 @@ JOBDIR = args.job_dir
 # PATH = JOBDIR
 
 # ~~~~ BQ ~~~~ (not used)
-DATASET_ID = "preprcessed"
+DATASET_ID = "demo_data_US" #"cbdsolutions_new_data_set"
+TABLE_ID = "Live_pool" # this should be where all the data is hosted at
 TIME = int(round(time.time() * 1000))
 NUM_PARTITIONS = 1 # choosing not to partitioned right now
 
 # ~~~~ Cloud ML ~~~~
-train_file = 'demo_package/input/train.csv'
+train_file = args.original_train_data_path
 test_file = 'demo_package/input/test.csv'
 store_file = args.store_data_path
 output_file = 'demo_package/output/total_historical_data_set.csv'
@@ -103,12 +106,13 @@ FIELD_DEFAULTS = len(integer_features) * [[0]] + \
 # Promo2
 # Assortment
 # Storetype
-store_df = pd.read_csv(store_file)
-store_df['CompetitionDistance'].fillna(store_df['CompetitionDistance'].median(), inplace = True)
-store_df.fillna(0,inplace = True)
-store_df = store_df.drop(columns = ['CompetitionOpenSinceMonth', 'CompetitionOpenSinceYear', 'Promo2SinceWeek', 
-                                    'Promo2SinceYear', 'PromoInterval'])
-store = store_df.set_index('Store').to_dict('index')
+with tf.gfile.Open(store_file, 'r') as open_store_input:
+    store_df = pd.read_csv(open_store_input)
+    store_df['CompetitionDistance'].fillna(store_df['CompetitionDistance'].median(), inplace = True)
+    store_df.fillna(0,inplace = True)
+    store_df = store_df.drop(columns = ['CompetitionOpenSinceMonth', 'CompetitionOpenSinceYear', 'Promo2SinceWeek', 
+                                        'Promo2SinceYear', 'PromoInterval'])
+    store = store_df.set_index('Store').to_dict('index')
 print(store[10])
 # define a function that can read in a time, and give out the required fields
 # Year
@@ -127,17 +131,17 @@ def parseTime(date_and_time):
     return results
 # Year, Month, Date
 print(parseTime(datetime.date(2015, 5, 5)))
-
-train_df = pd.read_csv(train_file)
-total = train_df['Store'].count() + 1
-print("Total is {}".format(total))
-p_open = len(train_df[train_df["Open"] == 1])/total
-p_promo = len(train_df[train_df["Promo"] == 1])/total
-p_stateholiday_0 = len(train_df[train_df["StateHoliday"] == 0])/total
-p_stateholiday_a = len(train_df[train_df["StateHoliday"] == 'a'])/total
-p_stateholiday_b = len(train_df[train_df["StateHoliday"] == 'b'])/total
-p_stateholiday_c = len(train_df[train_df["StateHoliday"] == 'c'])/total
-p_schoolholiday = len(train_df[train_df["SchoolHoliday"] == 1])/total
+with tf.gfile.Open(train_file, 'r') as open_train_input:
+    train_df = pd.read_csv(open_train_input)
+    total = train_df['Store'].count() + 1
+    print("Total is {}".format(total))
+    p_open = len(train_df[train_df["Open"] == 1])/total
+    p_promo = len(train_df[train_df["Promo"] == 1])/total
+    p_stateholiday_0 = len(train_df[train_df["StateHoliday"] == 0])/total
+    p_stateholiday_a = len(train_df[train_df["StateHoliday"] == 'a'])/total
+    p_stateholiday_b = len(train_df[train_df["StateHoliday"] == 'b'])/total
+    p_stateholiday_c = len(train_df[train_df["StateHoliday"] == 'c'])/total
+    p_schoolholiday = len(train_df[train_df["SchoolHoliday"] == 1])/total
 
 def my_rand(i, w):
     normed = [elem/sum(w) for elem in w]
@@ -177,8 +181,8 @@ def infer_data(storeID, date):
 
 # batch job prediction
 # PROJECT_ID = "rich-principle-225813"
-MODEL_ID = "rossmann_cbd_test_7"
-VERSION_ID = "rossmann_cbd_test_7"
+MODEL_ID = "linear_model"
+VERSION_ID = "version_1"
 
 # Pub sub
 TOPIC_NAME = "rossmann_real_time"
