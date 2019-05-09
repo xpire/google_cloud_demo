@@ -22,7 +22,8 @@ What is done:
 * Datalab for visualisations
 
 * Datastudio for dashboard
-Ideas to look at:
+
+## Ideas to look at:
 
 * BigTable to store data:
     - if the data ingest has a high throughput or we require real-time analysis with low latency, this could be a good option to store data in before passing it into cloudML
