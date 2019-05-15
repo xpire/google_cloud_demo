@@ -15,30 +15,38 @@
 # Usage: python -m demo_package.task (from outside this directory)
 # It is not a python program, and init holds all the global variables, 
 # so program will fail when called as: python packagedModel.py
+
 from . import * 
 import tensorflow as tf
 import numpy as np
 import pandas as pd
 import datetime
 from google.cloud import bigquery
+
 # ~~~~ PREPROCESS HELPER FUNCTIONS ~~~~
 
+# deprecated, Dataflow does this now.
 def preprocess(data, store):
     # set dates
     data['Year'] = data.index.year
     data['Month'] = data.index.month
     data['Day'] = data.index.day
     data['WeekOfYear'] = data.index.weekofyear
+    
     # Missing values, removes zero sales stores and closed stores
     data = data[(data["Open"] != 0) & (data["Sales"] != 0)]
+    
     # Missing values in store
     store['CompetitionDistance'].fillna(store['CompetitionDistance'].median(), inplace = True)
     store.fillna(0,inplace = True)
+    
     # Merging the two datasets together
     data_store = pd.merge(data, store, how = 'inner', on = 'Store')
+    
     # Change date from [1,7] to [0,6] for efficient reading into feature column.
     data_store["DayOfWeek"] = data_store["DayOfWeek"].apply(lambda x: int(x - 1))
     data_store["Month"] = data_store["Month"].apply(lambda x: int(x - 1))
+    
     # Removal of information with no effect
     data_store = data_store.drop(columns = ['Day'])
     data_store = data_store.drop(columns = ['PromoInterval'])
@@ -48,8 +56,10 @@ def preprocess(data, store):
     data_store = data_store.drop(columns = ['CompetitionOpenSinceYear'])
     data_store = data_store.drop(columns = ['Promo2SinceWeek'])
     data_store = data_store.drop(columns = ['Promo2SinceYear'])
+    
     # sort columns so that it matches the order specified in __init__.py
     data_store = data_store[COLUMNS]
+    
     # assert the correct data types are applied in each column
     for key in integer_features + boolean_features + list(categorical_identity_features.keys()) + list(bucket_categorical_features.keys()):
         data_store[key] = data_store[key].apply(lambda x: int(x))
@@ -78,8 +88,7 @@ def preprocess(data, store):
     train.to_csv(output_train, index=False)
     test.to_csv(output_test, index=False)
     # data_store.to_csv(output_file)
-    # return data_store
-
+    return data_store
 
 # ~~~~ INPUT FUNCTIONS ~~~~
 
@@ -96,9 +105,7 @@ def input_data(data_dir, store_dir):
 
 def get_data(csv_file, preprocess_data):
     if preprocess_data:
-        print("Preprocess 1. Reading in data.")
         eval, store = input_data(train_file, store_file)
-        print("Preprocess 2. Preproccessing data.")
         preprocess(eval, store)
     
     if STORAGE_TYPE == "local":
@@ -117,24 +124,13 @@ def get_data(csv_file, preprocess_data):
             TABLE_ID = "TestingSet"
         else:
             print("csv_file ({}) does not contain the word train or test, so we cannot infer whether this is the train or test dataset.".format(csv_file))
-        #     exit(1)
-        # print("Big query connector not implemented yet.")
+            exit(1)
         client = bigquery.Client()
-        # reader = BigQueryReader(
-        #     project_id=PROJECT_ID,
-        #     dataset_id=DATASET_ID,
-        #     table_id=TABLE_ID,
-        #     timestamp_millis=TIME,
-        #     num_partitions=NUM_PARTITIONS,
-        #     features=build_model_columns()
-        # )
         dataset_ref = client.dataset(DATASET_ID, project=PROJECT_ID)
         table_ref = dataset_ref.table(TABLE_ID)
-        
         extract_job = client.extract_table(
             table_ref,
             csv_file       # a bucket location
-            # location='us-central1'   # Must match location of source table
         )
         extract_job.result()
 
@@ -163,11 +159,9 @@ def input_set(preprocess_data, csv_file=output_file):
     
     get_data(csv_file, preprocess_data)
     ds = tf.data.TextLineDataset(csv_file).skip(1)
-    print("Input 1: Parsing lines.")
-    print(ds)
-    print(FIELD_DEFAULTS)
+    # print(ds)
     ds = ds.map(_parse_line)
-    print("ds: {}".format(ds))
+    # print("ds: {}".format(ds))
     ds = ds.shuffle(1000).repeat().batch(BATCHSIZE)
     return ds
 
@@ -185,12 +179,15 @@ def input_eval_set():
 def build_model_columns():
     # Builds set of feature columns
     features = []
+    
     # integer numerical columns
     for col in integer_features:
         features.append(tf.feature_column.numeric_column(key=col))
+    
     # boolean categorical columns
     for col in boolean_features:
         features.append(tf.feature_column.categorical_column_with_identity(key=col, num_buckets=2)) # [0, 1]
+    
     # integer categorical columns (ranging in integers)
     for key_name, item in categorical_identity_features.items():
         # print("for {}, len {}".format(key_name, item))
@@ -198,12 +195,15 @@ def build_model_columns():
             key=key_name,
             num_buckets=len(item) #[0,7) = [Mon, Tue, Wed, ..., Sun]
         ))
+    
     # categorical columns with vocabulary
     for key_name, item in categorical_features.items():
         features.append(tf.feature_column.categorical_column_with_vocabulary_list(
             key=key_name,
             vocabulary_list=item
         ))
+
+    # categorical columns with vocabulary that are bucketized
     for key_name, item in bucket_categorical_features.items():
         features.append(tf.feature_column.bucketized_column(
             source_column=tf.feature_column.numeric_column(key_name),

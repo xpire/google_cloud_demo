@@ -2,23 +2,9 @@
 # in datalab, inside big-data-demo CBD
 # use this command to start it:
 # datalab connect --zone us-central1-a --port 8081 prediction?
-from . import *
-import json
-import datetime
-import glob
-from google.cloud import storage
-from google.cloud import pubsub_v1
-import googleapiclient.discovery as discovery
-import google.cloud.storage.client as gcs
-
-import tensorflow as tf # Use tf's csv glob open method
-import csv
-import time
-import re
 
 # TODO: host this script on google cloud functions
 # https://cloud.google.com/functions/features/
-
 
 # Given rows of information of the form: 
     # Date (Year, DayOfWeek, Month, WeekOfYear)
@@ -40,6 +26,19 @@ import re
 # --output-path gs://rossmann-cbd/predictionOutputs/results \
 # --region us-central1 \
 # --data-format text
+
+from . import *
+import json
+import datetime
+import glob
+from google.cloud import storage
+from google.cloud import pubsub_v1
+import googleapiclient.discovery as discovery
+import google.cloud.storage.client as gcs
+import tensorflow as tf # Use tf's csv glob open method
+import csv
+import time
+import re
 
 # Combine dictionaries of the request and output as a string
 def generate_input_request(date_list, storeID_list):
@@ -145,7 +144,7 @@ def execute_request(request):
 def find_max_shards(results_list):
     number = None
     for results_file in results_list:
-        if "prediction.results-" not in results_file:
+        if OUTPUT_ID + "-" not in results_file:
             continue
         # this is a prediction file
         # find the total number of files
@@ -180,11 +179,11 @@ if __name__ == "__main__":
 
     # Generate the list of StoreIds to predict for
     store_list = range(1, 1115 + 1)
-    # Test set: only one store (store 1)
-    # store_list = [1]
+
     # Write to a json file
     source, live = generate_input_request(date_list, store_list)
     print(str(live[:5]) + "..." + str(live[-5:]))
+    
     # prevent New lines being added after every row: https://stackoverflow.com/questions/30929363/csv-writerows-puts-newline-after-each-row
     with open(SOURCE_FILE, "w+") as f, open(LIVE_FILE, "w+", newline='') as l:
         f.write(source)
@@ -213,12 +212,15 @@ if __name__ == "__main__":
     while True:
         now = time.time()
         header = ""
+        
         # Monitor Cloud ML job: (https://cloud.google.com/ml-engine/docs/tensorflow/monitor-training)
         get_request = ml.projects().jobs().get(name=JOB_NAME)
         response = execute_request(get_request)
+        
         # enum of possible states: https://cloud.google.com/ml-engine/reference/rest/v1/projects.jobs#State
         payload = response['state']
         exit_cond = ""
+        
         if response == None:
             header = "no response: "
             exit_cond = "exit"
