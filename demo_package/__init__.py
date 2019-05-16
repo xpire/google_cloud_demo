@@ -184,7 +184,7 @@ MODEL_ID = "__model"
 VERSION_ID = "__version"
 
 # Pub sub
-TOPIC_NAME = "rossmann_real_time"
+TOPIC_NAME = "__topic"
 
 # Cloud ML
 PROJECT_NAME = "projects/" + PROJECT_ID
