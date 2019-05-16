@@ -23,7 +23,7 @@ import tensorflow as tf
 # 88           88     `8b    Y8a.    .a8P  88,   ,d88  88          Y8a.    .a8P      88       
 # 88           88      `8b    `"Y8888Y"'    "Y8888P"   88888888888  `"Y8888Y"'       88       
 
-PROJECT_ID = "big-data-demo-219402"
+PROJECT_ID = "__sample_project_id"
 
 # 888888888888    db         ad88888ba   88      a8P   
 #      88        d88b       d8"     "8b  88    ,88'    
@@ -63,8 +63,8 @@ JOBDIR = args.job_dir
 # PATH = JOBDIR
 
 # ~~~~ BQ ~~~~ (not used)
-DATASET_ID = "demo_data_US" #"cbdsolutions_new_data_set"
-TABLE_ID = "Live_pool" # this should be where all the data is hosted at
+DATASET_ID = "__dataset" #"cbdsolutions_new_data_set"
+TABLE_ID = "__table" # this should be where all the data is hosted at
 TIME = int(round(time.time() * 1000))
 NUM_PARTITIONS = 1 # choosing not to partitioned right now
 
@@ -180,9 +180,8 @@ def infer_data(storeID, date):
 # From http://patorjk.com/software/taag
 
 # batch job prediction
-# PROJECT_ID = "rich-principle-225813"
-MODEL_ID = "linear_model"
-VERSION_ID = "version_1"
+MODEL_ID = "__model"
+VERSION_ID = "__version"
 
 # Pub sub
 TOPIC_NAME = "rossmann_real_time"
@@ -191,21 +190,21 @@ TOPIC_NAME = "rossmann_real_time"
 PROJECT_NAME = "projects/" + PROJECT_ID
 MODEL_NAME = PROJECT_NAME + "/models/" + MODEL_ID
 VERSION_NAME = MODEL_NAME + "/versions/" + VERSION_ID
-BUCKET_NAME  = "rossmann-cbd"
+BUCKET_NAME  = "__bucket_name"
 SOURCE_FILE = "request.json"
 LIVE_FILE = "live.csv"
 DESTINATION_BLOB = "predictionOutputs/request.json"
 
 # GCS Bucket (https://cloud.google.com/storage/docs/access-control/iam to control access to buckets)
-INPUT_PATH = "gs://rossmann-cbd/predictionOutputs/request.json"
+INPUT_PATH = "__gs://path/to/request.json"
 OUTPUT_DIR = "predictionOutputs/results"
 OUTPUT_PATH = "gs://" + BUCKET_NAME + "/" + OUTPUT_DIR
 OUTPUT_ID = "prediction.results"
 OUTPUT_NAME = OUTPUT_DIR + "/" + OUTPUT_ID
 # FINAL_OUTPUT = OUTPUT_DIR + "/" + OUTPUT_ID + ".output"
 # for cmd:
-# set GOOGLE_APPLICATION_CREDENTIALS=C:\Users\justi\uni\cloudbdsolutions\Test-Rossmann-2249d43821fe.json 
+# set GOOGLE_APPLICATION_CREDENTIALS=C:\path\to\json\json_key.json 
 # for PowerShell:
-# $env:GOOGLE_APPLICATION_CREDENTIALS="C:\Users\justi\uni\cloudbdsolutions\Test-Rossmann-2249d43821fe.json"
-GOOGLE_APPLICATION_CREDENTIALS = "../Test-Rossmann-2249d43821fe.json"
+# $env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\json\json_key.json"
+GOOGLE_APPLICATION_CREDENTIALS = "../__json_key.json"
 # SET THE GOOGLE_APPLICATION_CREDENTIALS: https://cloud.google.com/docs/authentication/getting-started
